@@ -84,6 +84,66 @@ const promptFileBootstrap = (fp) =>
   'Follow every instruction in that file exactly. ' +
   'Do not begin your response until you have read the entire file.';
 
+function snapshotFilesForProgress(rootDir) {
+  if (!rootDir || !fs.existsSync(rootDir)) return [];
+  const out = [];
+  const walk = (dir, prefix = '') => {
+    let entries = [];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.od-prompt-')) continue;
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (rel.split('/').length < 3) walk(abs, rel);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      try {
+        const st = fs.statSync(abs);
+        out.push({ name: rel, size: st.size, mtime: st.mtimeMs });
+      } catch {
+        // Ignore files being written/renamed between readdir and stat.
+      }
+    }
+  };
+  walk(rootDir);
+  out.sort((a, b) => a.name.localeCompare(b.name));
+  return out.slice(0, 40);
+}
+
+function fileSnapshotSignature(files) {
+  return files.map((f) => `${f.name}:${f.size}:${Math.round(f.mtime)}`).join('|');
+}
+
+function readCodexDefaultConfig() {
+  const codexHome = process.env.CODEX_HOME
+    ? path.resolve(process.env.CODEX_HOME)
+    : path.join(os.homedir(), '.codex');
+  const configPath = path.join(codexHome, 'config.toml');
+  let text = '';
+  try {
+    text = fs.readFileSync(configPath, 'utf8');
+  } catch {
+    return { configPath, model: null, reasoning: null };
+  }
+  return {
+    configPath,
+    model: readTopLevelTomlString(text, 'model'),
+    reasoning: readTopLevelTomlString(text, 'model_reasoning_effort'),
+  };
+}
+
+function readTopLevelTomlString(text, key) {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`^${escaped}\\s*=\\s*["']([^"']+)["']\\s*$`, 'm');
+  return re.exec(text)?.[1] ?? null;
+}
+
 const UPLOAD_DIR = path.join(os.tmpdir(), 'od-uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
@@ -1083,6 +1143,19 @@ export async function startServer({ port = 7456, returnServer = false } = {}) {
     // case this branch covers.
     const useShell =
       process.platform === 'win32' && CMD_BAT_RE.test(resolvedBin);
+    const codexDefaults = agentId === 'codex' ? readCodexDefaultConfig() : null;
+    const codexLocalProvider =
+      agentId === 'codex' &&
+      (process.env.OD_CODEX_LOCAL_PROVIDER === 'ollama' ||
+        process.env.OD_CODEX_LOCAL_PROVIDER === 'lmstudio')
+        ? process.env.OD_CODEX_LOCAL_PROVIDER
+        : null;
+    const resolvedModel =
+      safeModel ||
+      (agentId === 'codex' ? codexDefaults?.model ?? null : null);
+    const resolvedReasoning =
+      safeReasoning ||
+      (agentId === 'codex' ? codexDefaults?.reasoning ?? null : null);
 
     send('start', {
       agentId,
@@ -1092,10 +1165,29 @@ export async function startServer({ port = 7456, returnServer = false } = {}) {
       cwd,
       model: safeModel,
       reasoning: safeReasoning,
+      resolvedModel,
+      resolvedReasoning,
+      localProvider: codexLocalProvider,
+      configPath: codexDefaults?.configPath ?? null,
     });
 
     let child;
     let acpSession = null;
+    let heartbeatTimer = null;
+    let fileWatchTimer = null;
+    let lastFileSignature = cwd
+      ? fileSnapshotSignature(snapshotFilesForProgress(cwd))
+      : '';
+    const cleanupProgressTimers = () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+      if (fileWatchTimer) {
+        clearInterval(fileWatchTimer);
+        fileWatchTimer = null;
+      }
+    };
     try {
       // When the agent definition sets `promptViaStdin`, pipe the composed
       // prompt through stdin instead of embedding it in argv. Bypasses the
@@ -1108,6 +1200,37 @@ export async function startServer({ port = 7456, returnServer = false } = {}) {
         cwd: cwd || undefined,
         shell: useShell,
       });
+      send('agent', {
+        type: 'debug',
+        label: 'spawned',
+        detail: `pid ${child.pid ?? 'unknown'} · ${path.basename(resolvedBin)}`,
+        ts: Date.now(),
+      });
+      if (cwd) {
+        const files = snapshotFilesForProgress(cwd);
+        if (files.length > 0) {
+          send('agent', { type: 'file_change', files, ts: Date.now() });
+        }
+      }
+      const startedAt = Date.now();
+      heartbeatTimer = setInterval(() => {
+        send('agent', {
+          type: 'debug',
+          label: 'heartbeat',
+          detail: `${Math.round((Date.now() - startedAt) / 1000)}s · pid ${child.pid ?? 'unknown'}`,
+          ts: Date.now(),
+        });
+      }, 10_000);
+      if (cwd) {
+        fileWatchTimer = setInterval(() => {
+          const files = snapshotFilesForProgress(cwd);
+          const sig = fileSnapshotSignature(files);
+          if (sig && sig !== lastFileSignature) {
+            lastFileSignature = sig;
+            send('agent', { type: 'file_change', files, ts: Date.now() });
+          }
+        }, 2_000);
+      }
       if (def.promptViaStdin && child.stdin) {
         // EPIPE from a fast-exiting CLI (bad auth, missing model, exit on
         // launch) would otherwise surface as an unhandled stream error and
@@ -1122,6 +1245,7 @@ export async function startServer({ port = 7456, returnServer = false } = {}) {
       }
     } catch (err) {
       cleanPromptFile();
+      cleanupProgressTimers();
       send('error', { message: `spawn failed: ${err.message}` });
       return res.end();
     }
@@ -1158,24 +1282,45 @@ export async function startServer({ port = 7456, returnServer = false } = {}) {
     } else {
       child.stdout.on('data', (chunk) => send('stdout', { chunk }));
     }
-    child.stderr.on('data', (chunk) => send('stderr', { chunk }));
+    child.stderr.on('data', (chunk) => {
+      send('stderr', { chunk });
+      const clean = String(chunk).trim().replace(/\s+/g, ' ').slice(-500);
+      if (clean) {
+        send('agent', {
+          type: 'debug',
+          label: 'stderr',
+          detail: clean,
+          ts: Date.now(),
+        });
+      }
+    });
 
     const kill = () => {
       if (child && !child.killed) child.kill('SIGTERM');
     };
     res.on('close', () => {
+      cleanupProgressTimers();
       if (!res.writableEnded) kill();
     });
 
     child.on('error', (err) => {
+      cleanupProgressTimers();
       send('error', { message: err.message });
       res.end();
     });
     child.on('close', (code, signal) => {
+      cleanupProgressTimers();
       if (acpSession?.hasFatalError()) {
         return res.end();
       }
       cleanPromptFile();
+      if (cwd) {
+        send('agent', {
+          type: 'file_change',
+          files: snapshotFilesForProgress(cwd),
+          ts: Date.now(),
+        });
+      }
       send('end', { code, signal });
       res.end();
     });

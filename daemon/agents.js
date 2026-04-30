@@ -164,6 +164,10 @@ export const AGENT_DEFS = [
     // `spawn ENAMETOOLONG` while keeping Codex on its structured JSON stream.
     buildArgs: (_prompt, _imagePaths, _extra, options = {}, runtimeContext = {}) => {
       const args = ['exec', '--json', '--skip-git-repo-check', '--full-auto'];
+      const localProvider = process.env.OD_CODEX_LOCAL_PROVIDER;
+      if (localProvider === 'ollama' || localProvider === 'lmstudio') {
+        args.push('--oss', '--local-provider', localProvider);
+      }
       if (runtimeContext.cwd) {
         args.push('-C', runtimeContext.cwd);
       }

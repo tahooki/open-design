@@ -31,12 +31,20 @@ export interface AppConfig {
 
 export type AgentEvent =
   | { kind: 'status'; label: string; detail?: string | undefined }
+  | { kind: 'debug'; label: string; detail?: string | undefined; ts?: number }
+  | { kind: 'file_change'; files: AgentFileChange[]; ts?: number }
   | { kind: 'text'; text: string }
   | { kind: 'thinking'; text: string }
   | { kind: 'tool_use'; id: string; name: string; input: unknown }
   | { kind: 'tool_result'; toolUseId: string; content: string; isError: boolean }
   | { kind: 'usage'; inputTokens?: number; outputTokens?: number; costUsd?: number; durationMs?: number }
   | { kind: 'raw'; line: string };
+
+export interface AgentFileChange {
+  name: string;
+  size: number;
+  mtime: number;
+}
 
 export interface ChatMessage {
   id: string;

@@ -106,7 +106,8 @@ export async function streamViaDaemon({
         }
 
         if (parsed.event === 'stderr') {
-          stderrBuf += parsed.data.chunk ?? '';
+          const chunk = String(parsed.data.chunk ?? '');
+          stderrBuf += chunk;
           continue;
         }
 
@@ -127,6 +128,47 @@ export async function streamViaDaemon({
             label: 'starting',
             detail: typeof parsed.data.bin === 'string' ? parsed.data.bin : undefined,
           });
+          const model =
+            typeof parsed.data.model === 'string' && parsed.data.model
+              ? parsed.data.model
+              : 'default';
+          const reasoning =
+            typeof parsed.data.reasoning === 'string' && parsed.data.reasoning
+              ? parsed.data.reasoning
+              : 'default';
+          const resolvedModel =
+            typeof parsed.data.resolvedModel === 'string' && parsed.data.resolvedModel
+              ? parsed.data.resolvedModel
+              : null;
+          const resolvedReasoning =
+            typeof parsed.data.resolvedReasoning === 'string' && parsed.data.resolvedReasoning
+              ? parsed.data.resolvedReasoning
+              : null;
+          const streamFormat =
+            typeof parsed.data.streamFormat === 'string'
+              ? parsed.data.streamFormat
+              : 'plain';
+          const localProvider =
+            typeof parsed.data.localProvider === 'string' && parsed.data.localProvider
+              ? parsed.data.localProvider
+              : null;
+          const modelLabel =
+            model === 'default' && resolvedModel ? `default (${resolvedModel})` : model;
+          const reasoningLabel =
+            reasoning === 'default' && resolvedReasoning
+              ? `default (${resolvedReasoning})`
+              : reasoning;
+          handlers.onAgentEvent({
+            kind: 'debug',
+            label: 'config',
+            detail: [
+              localProvider ? `provider ${localProvider}` : null,
+              `model ${modelLabel}`,
+              `reasoning ${reasoningLabel}`,
+              streamFormat,
+            ].filter(Boolean).join(' · '),
+            ts: Date.now(),
+          });
           continue;
         }
 
@@ -137,6 +179,14 @@ export async function streamViaDaemon({
 
         if (parsed.event === 'end') {
           exitCode = typeof parsed.data.code === 'number' ? parsed.data.code : null;
+          handlers.onAgentEvent({
+            kind: 'status',
+            label: exitCode === 0 ? 'exited' : 'failed',
+            detail:
+              typeof parsed.data.signal === 'string' && parsed.data.signal
+                ? `signal ${parsed.data.signal}`
+                : `code ${exitCode ?? 'unknown'}`,
+          });
         }
       }
     }
@@ -190,6 +240,35 @@ function translateAgentEvent(data: Record<string, unknown>): AgentEvent | null {
           : typeof data.ttftMs === 'number'
             ? `first token in ${Math.round((data.ttftMs as number) / 100) / 10}s`
             : undefined,
+    };
+  }
+  if (t === 'debug' && typeof data.label === 'string') {
+    return {
+      kind: 'debug',
+      label: data.label,
+      detail: typeof data.detail === 'string' ? data.detail : undefined,
+      ts: typeof data.ts === 'number' ? data.ts : undefined,
+    };
+  }
+  if (t === 'file_change' && Array.isArray(data.files)) {
+    const files = data.files
+      .map((f) => {
+        if (!f || typeof f !== 'object') return null;
+        const rec = f as Record<string, unknown>;
+        if (
+          typeof rec.name !== 'string' ||
+          typeof rec.size !== 'number' ||
+          typeof rec.mtime !== 'number'
+        ) {
+          return null;
+        }
+        return { name: rec.name, size: rec.size, mtime: rec.mtime };
+      })
+      .filter((f): f is { name: string; size: number; mtime: number } => Boolean(f));
+    return {
+      kind: 'file_change',
+      files,
+      ts: typeof data.ts === 'number' ? data.ts : undefined,
     };
   }
   if (t === 'text_delta' && typeof data.delta === 'string') {

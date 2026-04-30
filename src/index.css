@@ -3026,6 +3026,141 @@ code {
 .status-label { letter-spacing: 0.02em; }
 .status-detail { color: var(--text); }
 
+/* Compact one-line activity feed for local agents */
+.activity-log {
+  width: min(560px, 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--bg-panel) 92%, var(--bg-subtle));
+  overflow: hidden;
+}
+.activity-log-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.activity-log-head:hover { background: var(--bg-subtle); }
+.activity-log-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--text-muted);
+  flex: 0 0 auto;
+}
+.activity-log-pulse[data-active="true"] {
+  background: var(--accent);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.activity-log-title {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+.activity-log-current {
+  min-width: 0;
+  flex: 1;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.activity-log-chev { color: var(--text-muted); flex: 0 0 auto; }
+.activity-log-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px 10px;
+}
+.activity-line {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+.activity-line-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--text-muted);
+}
+.activity-line[data-tone="warn"] .activity-line-dot { background: var(--red); }
+.activity-line[data-tone="done"] .activity-line-dot { background: var(--green); }
+.activity-line-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.activity-line-label {
+  color: var(--text);
+  white-space: nowrap;
+}
+.activity-line code {
+  min-width: 0;
+  flex: 1;
+  font-family: var(--mono);
+  color: var(--text-muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.activity-line small {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.activity-files {
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+}
+.activity-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  font-size: 11.5px;
+}
+.activity-file span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.activity-file code {
+  font-family: var(--mono);
+  color: var(--text-muted);
+}
+.activity-file small {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .activity-line { grid-template-columns: 8px minmax(0, 1fr); }
+  .activity-line small, .activity-file small { display: none; }
+  .activity-file { grid-template-columns: minmax(0, 1fr) auto; }
+}
+
 /* Grouped tool / action card — the collapsible pill from screenshot 9 */
 .action-card {
   display: flex;

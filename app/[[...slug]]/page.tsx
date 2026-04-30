@@ -1,5 +1,7 @@
 import { ClientApp } from './client-app';
 
+export const dynamicParams = true;
+
 // The whole product is a client-driven SPA: project IDs and file paths are
 // unbounded user input, so we route every URL through this single optional
 // catch-all and let the existing client router (src/router.ts, which reads
