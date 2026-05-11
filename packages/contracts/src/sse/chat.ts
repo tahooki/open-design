@@ -36,6 +36,11 @@ export interface ChatSseStartPayload {
   projectId?: string | null;
   model?: string | null;
   reasoning?: string | null;
+  streamFormat?: string | null;
+  resolvedModel?: string | null;
+  resolvedReasoning?: string | null;
+  localProvider?: string | null;
+  configPath?: string | null;
 }
 
 export interface ChatSseChunkPayload {
@@ -50,6 +55,8 @@ export interface ChatSseEndPayload {
 
 export type DaemonAgentPayload =
   | { type: 'status'; label: string; model?: string; ttftMs?: number; detail?: string }
+  | { type: 'debug'; label: string; detail?: string; ts?: number }
+  | { type: 'file_change'; files: DaemonAgentFileChange[]; ts?: number }
   | { type: 'text_delta'; delta: string }
   | { type: 'thinking_delta'; delta: string }
   | { type: 'thinking_start' }
@@ -59,6 +66,12 @@ export type DaemonAgentPayload =
   | { type: 'tool_result'; toolUseId: string; content: string; isError?: boolean }
   | { type: 'usage'; usage?: { input_tokens?: number; output_tokens?: number }; costUsd?: number; durationMs?: number }
   | { type: 'raw'; line: string };
+
+export interface DaemonAgentFileChange {
+  name: string;
+  size: number;
+  mtime: number;
+}
 
 export type ChatSseEvent =
   | SseTransportEvent<'start', ChatSseStartPayload>

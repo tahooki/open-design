@@ -369,6 +369,10 @@ export const AGENT_DEFS = [
       if (process.env.OD_CODEX_DISABLE_PLUGINS === '1') {
         args.push('--disable', 'plugins');
       }
+      const localProvider = process.env.OD_CODEX_LOCAL_PROVIDER;
+      if (localProvider === 'ollama' || localProvider === 'lmstudio') {
+        args.push('--oss', '--local-provider', localProvider);
+      }
       if (runtimeContext.cwd) {
         args.push('-C', runtimeContext.cwd);
       }

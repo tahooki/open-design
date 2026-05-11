@@ -1166,6 +1166,88 @@ const promptFileBootstrap = (fp) =>
   'it contains the system prompt, design system, skill workflow, and user request. ' +
   'Do not begin your response until you have read the entire file.';
 
+const PROGRESS_SNAPSHOT_SKIP_DIRS = new Set([
+  '.git',
+  '.next',
+  '.turbo',
+  'build',
+  'coverage',
+  'dist',
+  'node_modules',
+  'out',
+]);
+
+function snapshotFilesForProgress(rootDir) {
+  if (!rootDir || !fs.existsSync(rootDir)) return [];
+  const out = [];
+  const walk = (dir, prefix = '', depth = 0) => {
+    if (out.length >= 80) return;
+    let entries = [];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      if (entry.name.startsWith('.od-prompt-')) continue;
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!PROGRESS_SNAPSHOT_SKIP_DIRS.has(entry.name) && depth < 2) {
+          walk(abs, rel, depth + 1);
+        }
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      try {
+        const st = fs.statSync(abs);
+        out.push({ name: rel, size: st.size, mtime: st.mtimeMs });
+      } catch {
+        // Ignore files being written or renamed between readdir and stat.
+      }
+    }
+  };
+  walk(rootDir);
+  out.sort((a, b) => a.name.localeCompare(b.name));
+  return out.slice(0, 40);
+}
+
+function fileSnapshotSignature(files) {
+  return files
+    .map((file) => `${file.name}:${file.size}:${Math.round(file.mtime)}`)
+    .join('|');
+}
+
+function readCodexDefaultConfig() {
+  const rawCodexHome =
+    typeof process.env.CODEX_HOME === 'string' &&
+    process.env.CODEX_HOME.trim().length > 0
+      ? process.env.CODEX_HOME.trim()
+      : path.join(os.homedir(), '.codex');
+  const codexHome = rawCodexHome.startsWith('~/')
+    ? path.join(os.homedir(), rawCodexHome.slice(2))
+    : rawCodexHome;
+  const configPath = path.join(path.resolve(codexHome), 'config.toml');
+  let text = '';
+  try {
+    text = fs.readFileSync(configPath, 'utf8');
+  } catch {
+    return { configPath, model: null, reasoning: null };
+  }
+  return {
+    configPath,
+    model: readTopLevelTomlString(text, 'model'),
+    reasoning: readTopLevelTomlString(text, 'model_reasoning_effort'),
+  };
+}
+
+function readTopLevelTomlString(text, key) {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`^${escaped}\\s*=\\s*["']([^"']+)["']\\s*$`, 'm');
+  return re.exec(text)?.[1] ?? null;
+}
+
 // Load Critique Theater config once at startup so a bad OD_CRITIQUE_* value
 // surfaces immediately as a boot-time RangeError instead of silently at
 // run time. Default: enabled=false (M0 dark launch).
@@ -6483,9 +6565,58 @@ export async function startServer({
     }
 
     const send = (event, data) => design.runs.emit(run, event, data);
+    const codexDefaults = def.id === 'codex' ? readCodexDefaultConfig() : null;
+    const codexLocalProvider =
+      def.id === 'codex' &&
+      (process.env.OD_CODEX_LOCAL_PROVIDER === 'ollama' ||
+        process.env.OD_CODEX_LOCAL_PROVIDER === 'lmstudio')
+        ? process.env.OD_CODEX_LOCAL_PROVIDER
+        : null;
+    const requestedModel =
+      safeModel && safeModel !== 'default' ? safeModel : null;
+    const requestedReasoning =
+      safeReasoning && safeReasoning !== 'default' ? safeReasoning : null;
+    const resolvedModel =
+      requestedModel ?? (def.id === 'codex' ? codexDefaults?.model ?? null : null);
+    const resolvedReasoning =
+      requestedReasoning ??
+      (def.id === 'codex' ? codexDefaults?.reasoning ?? null : null);
     const inactivityTimeoutMs = resolveChatRunInactivityTimeoutMs();
     const inactivityKillGraceMs = 3_000;
     let inactivityTimer = null;
+    let heartbeatTimer = null;
+    let fileWatchTimer = null;
+    let lastFileSignature = cwd
+      ? fileSnapshotSignature(snapshotFilesForProgress(cwd))
+      : '';
+    const cleanupProgressTimers = () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+      if (fileWatchTimer) {
+        clearInterval(fileWatchTimer);
+        fileWatchTimer = null;
+      }
+    };
+    const emitFileProgressSnapshot = () => {
+      if (!cwd) return;
+      const files = snapshotFilesForProgress(cwd);
+      lastFileSignature = fileSnapshotSignature(files);
+      if (files.length > 0) {
+        send('agent', { type: 'file_change', files, ts: Date.now() });
+      }
+    };
+    const emitStderrDebug = (chunk) => {
+      const clean = String(chunk).trim().replace(/\s+/g, ' ').slice(-500);
+      if (!clean) return;
+      send('agent', {
+        type: 'debug',
+        label: 'stderr',
+        detail: clean,
+        ts: Date.now(),
+      });
+    };
     const clearInactivityWatchdog = () => {
       if (inactivityTimer) {
         clearTimeout(inactivityTimer);
@@ -6507,6 +6638,7 @@ export async function startServer({
         `Agent stalled without emitting any new output for ${Math.round(inactivityTimeoutMs / 1000)}s. ` +
         'The model or CLI likely hung while generating. Retry the turn or pick a different model.';
       clearInactivityWatchdog();
+      cleanupProgressTimers();
       send('error', createSseErrorPayload('AGENT_EXECUTION_FAILED', message, { retryable: true }));
       design.runs.finish(run, 'failed', 1, null);
       if (acpSession?.abort) {
@@ -6572,6 +6704,10 @@ export async function startServer({
       cwd,
       model: safeModel,
       reasoning: safeReasoning,
+      resolvedModel,
+      resolvedReasoning,
+      localProvider: codexLocalProvider,
+      configPath: codexDefaults?.configPath ?? null,
       toolTokenExpiresAt: toolTokenGrant?.expiresAt ?? null,
     });
     noteAgentActivity();
@@ -6613,6 +6749,34 @@ export async function startServer({
         windowsVerbatimArguments: invocation.windowsVerbatimArguments,
       });
       run.child = child;
+      send('agent', {
+        type: 'debug',
+        label: 'spawned',
+        detail: `pid ${child.pid ?? 'unknown'} · ${path.basename(resolvedBin)}`,
+        ts: Date.now(),
+      });
+      emitFileProgressSnapshot();
+      const startedAt = Date.now();
+      heartbeatTimer = setInterval(() => {
+        send('agent', {
+          type: 'debug',
+          label: 'heartbeat',
+          detail: `${Math.round((Date.now() - startedAt) / 1000)}s · pid ${child.pid ?? 'unknown'}`,
+          ts: Date.now(),
+        });
+      }, 10_000);
+      heartbeatTimer.unref?.();
+      if (cwd) {
+        fileWatchTimer = setInterval(() => {
+          const files = snapshotFilesForProgress(cwd);
+          const sig = fileSnapshotSignature(files);
+          if (sig !== lastFileSignature) {
+            lastFileSignature = sig;
+            send('agent', { type: 'file_change', files, ts: Date.now() });
+          }
+        }, 2_000);
+        fileWatchTimer.unref?.();
+      }
       if (def.promptViaStdin && child.stdin && def.streamFormat !== 'pi-rpc') {
         // EPIPE from a fast-exiting CLI (bad auth, missing model, exit on
         // launch) would otherwise surface as an unhandled stream error and
@@ -6634,6 +6798,7 @@ export async function startServer({
     } catch (err) {
       revokeToolToken('child_exit');
       unregisterChatAgentEventSink();
+      cleanupProgressTimers();
       send('error', createSseErrorPayload('AGENT_EXECUTION_FAILED', `spawn failed: ${err.message}`));
       design.runs.finish(run, 'failed', 1, null);
       return;
@@ -6709,8 +6874,10 @@ export async function startServer({
         child.stderr.on('data', (chunk) => {
           noteAgentActivity();
           send('stderr', { chunk });
+          emitStderrDebug(chunk);
         });
         child.on('error', (err) => {
+          cleanupProgressTimers();
           send('error', createSseErrorPayload('AGENT_EXECUTION_FAILED', err.message));
         });
 
@@ -6745,16 +6912,24 @@ export async function startServer({
           const succeeded = orchestratorResult.status === 'shipped'
             || orchestratorResult.status === 'below_threshold';
           if (run.cancelRequested) {
+            cleanupProgressTimers();
+            emitFileProgressSnapshot();
             design.runs.finish(run, 'canceled', 1, null);
           } else if (succeeded) {
+            cleanupProgressTimers();
+            emitFileProgressSnapshot();
             design.runs.finish(run, 'succeeded', 0, null);
           } else {
+            cleanupProgressTimers();
+            emitFileProgressSnapshot();
             design.runs.finish(run, 'failed', 1, null);
           }
         } catch (err) {
+          cleanupProgressTimers();
           send('error', createSseErrorPayload('AGENT_EXECUTION_FAILED', err instanceof Error ? err.message : String(err)));
           design.runs.finish(run, 'failed', 1, null);
         } finally {
+          cleanupProgressTimers();
           critiqueRunRegistry.unregister(critiqueProjectKey, critiqueRunId);
         }
         return;
@@ -6902,10 +7077,12 @@ export async function startServer({
     child.stderr.on('data', (chunk) => {
       noteAgentActivity();
       send('stderr', { chunk });
+      emitStderrDebug(chunk);
     });
 
     child.on('error', (err) => {
       clearInactivityWatchdog();
+      cleanupProgressTimers();
       revokeToolToken('child_exit');
       unregisterChatAgentEventSink();
       send('error', createSseErrorPayload('AGENT_EXECUTION_FAILED', err.message));
@@ -6913,6 +7090,8 @@ export async function startServer({
     });
     child.on('close', (code, signal) => {
       clearInactivityWatchdog();
+      cleanupProgressTimers();
+      emitFileProgressSnapshot();
       revokeToolToken('child_exit');
       unregisterChatAgentEventSink();
       if (acpSession?.hasFatalError()) {

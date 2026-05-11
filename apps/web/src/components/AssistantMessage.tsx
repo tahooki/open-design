@@ -72,6 +72,8 @@ export function AssistantMessage({
     | undefined;
   const produced = message.producedFiles ?? [];
   const roleLabel = assistantRoleLabel(message, t);
+  const runtime = useMemo(() => summarizeRuntime(events), [events]);
+  const activity = useMemo(() => buildActivityItems(events), [events]);
   const unfinishedTodos = streaming ? [] : unfinishedTodosFromEvents(events);
   const canContinueTodos =
     !streaming &&
@@ -134,6 +136,9 @@ export function AssistantMessage({
             return <StatusPill key={i} label={b.label} detail={b.detail} />;
           return null;
         })}
+        {activity.length > 0 || runtime ? (
+          <ActivityLog items={activity} runtime={runtime} streaming={streaming} />
+        ) : null}
         {!streaming && produced.length > 0 && projectId ? (
           <ProducedFiles
             files={produced}
@@ -197,6 +202,274 @@ export function assistantRoleLabel(
     agentDisplayName(starting?.detail) ?? t("assistant.role"),
     model
   );
+}
+
+interface ActivityItem {
+  key: string;
+  label: string;
+  detail?: string;
+  ts?: number;
+  tone?: "normal" | "warn" | "done";
+}
+
+function buildActivityItems(events: AgentEvent[]): ActivityItem[] {
+  const items: ActivityItem[] = [];
+  let lastFileSig = "";
+  let debugIndex = 0;
+  let statusIndex = 0;
+
+  for (const ev of events) {
+    if (ev.kind === "status") {
+      if (ev.label === "starting") {
+        items.push({
+          key: `s-${statusIndex++}`,
+          label: "Starting local agent",
+          detail: ev.detail,
+        });
+      } else if (ev.label === "initializing") {
+        items.push({
+          key: `s-${statusIndex++}`,
+          label: "Opening Codex session",
+        });
+      } else if (ev.label === "running") {
+        items.push({ key: `s-${statusIndex++}`, label: "Model is running" });
+      } else if (ev.label === "exited") {
+        items.push({
+          key: `s-${statusIndex++}`,
+          label: "Agent finished",
+          detail: ev.detail,
+          tone: "done",
+        });
+      } else if (ev.label === "failed") {
+        items.push({
+          key: `s-${statusIndex++}`,
+          label: "Agent failed",
+          detail: ev.detail,
+          tone: "warn",
+        });
+      }
+      continue;
+    }
+
+    if (ev.kind === "debug") {
+      if (ev.label === "spawned") {
+        items.push({
+          key: `d-${debugIndex++}`,
+          label: "Process spawned",
+          detail: ev.detail,
+          ts: ev.ts,
+        });
+      } else if (ev.label === "config") {
+        items.push({
+          key: `d-${debugIndex++}`,
+          label: "Model config",
+          detail: ev.detail,
+          ts: ev.ts,
+        });
+      } else if (ev.label === "heartbeat") {
+        items.push({
+          key: `d-${debugIndex++}`,
+          label: "Still working",
+          detail: ev.detail,
+          ts: ev.ts,
+        });
+      } else if (ev.label === "stderr") {
+        const isError = ev.detail?.includes("ERROR") ?? false;
+        items.push({
+          key: `d-${debugIndex++}`,
+          label: isError ? "Runtime error output" : "Runtime warning",
+          detail: ev.detail,
+          ts: ev.ts,
+          tone: isError ? "warn" : "normal",
+        });
+      }
+      continue;
+    }
+
+    if (ev.kind === "file_change") {
+      const latest = ev.files.slice().sort((a, b) => b.mtime - a.mtime)[0];
+      if (!latest) continue;
+      const sig = `${latest.name}:${latest.size}:${Math.round(latest.mtime)}`;
+      if (sig === lastFileSig) continue;
+      lastFileSig = sig;
+      items.push({
+        key: `f-${sig}`,
+        label: 'Project file updated',
+        detail: `${latest.name} · ${humanBytes(latest.size)}`,
+        ts: ev.ts ?? latest.mtime,
+      });
+      continue;
+    }
+
+    if (ev.kind === "tool_use") {
+      items.push({
+        key: `t-${ev.id}`,
+        label: `Using ${ev.name}`,
+        detail: toolInputSummary(ev.input),
+      });
+      continue;
+    }
+  }
+
+  return compactActivity(items).slice(-8);
+}
+
+function compactActivity(items: ActivityItem[]): ActivityItem[] {
+  const out: ActivityItem[] = [];
+  for (const item of items) {
+    const prev = out[out.length - 1];
+    if (prev && prev.label === item.label && prev.detail === item.detail) {
+      out[out.length - 1] = item;
+    } else {
+      out.push(item);
+    }
+  }
+  return out;
+}
+
+function toolInputSummary(input: unknown): string | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const rec = input as Record<string, unknown>;
+  for (const key of ["file_path", "path", "cmd", "command", "pattern"]) {
+    if (typeof rec[key] === "string" && rec[key]) {
+      return String(rec[key]).slice(0, 140);
+    }
+  }
+  return undefined;
+}
+
+function ActivityLog({
+  items,
+  runtime,
+  streaming,
+}: {
+  items: ActivityItem[];
+  runtime: RuntimeSummary | null;
+  streaming: boolean;
+}) {
+  const [open, setOpen] = useState(true);
+  const visible = open ? items : items.slice(-1);
+  const latestFiles = (runtime?.files ?? [])
+    .slice()
+    .sort((a, b) => b.mtime - a.mtime)
+    .slice(0, 3);
+  const latestFile = latestFiles[0];
+  const currentLabel =
+    items[items.length - 1]?.label ??
+    runtime?.latestStatus ??
+    (streaming ? "Working" : "Idle");
+  const summaryParts = [
+    runtime?.config ?? null,
+    runtime?.pid ? `pid ${runtime.pid}` : null,
+    runtime?.lastActivity ? timeAgo(runtime.lastActivity) : null,
+    latestFile ? `${latestFile.name} ${humanBytes(latestFile.size)}` : null,
+    runtime?.stderrCount ? `${runtime.stderrCount} stderr` : null,
+  ].filter(Boolean);
+  return (
+    <div
+      className="activity-log"
+      data-streaming={streaming ? "true" : "false"}
+    >
+      <button
+        type="button"
+        className="activity-log-head"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span
+          className="activity-log-pulse"
+          data-active={streaming ? "true" : "false"}
+        />
+        <span className="activity-log-title">Activity</span>
+        <span className="activity-log-current">
+          {currentLabel}
+          {summaryParts.length > 0 ? ` · ${summaryParts.join(' · ')}` : ''}
+        </span>
+        <span className="activity-log-chev">
+          <Icon name={open ? 'chevron-down' : 'chevron-right'} size={11} />
+        </span>
+      </button>
+      <div className="activity-log-lines">
+        {visible.map((item) => (
+          <div
+            className="activity-line"
+            data-tone={item.tone ?? "normal"}
+            key={item.key}
+          >
+            <span className="activity-line-dot" />
+            <span className="activity-line-main">
+              <span className="activity-line-label">{item.label}</span>
+              {item.detail ? <code>{item.detail}</code> : null}
+            </span>
+            {item.ts ? <small>{timeAgo(item.ts)}</small> : null}
+          </div>
+        ))}
+        {open && latestFiles.length > 0 ? (
+          <div className="activity-files">
+            {latestFiles.map((f) => (
+              <div className="activity-file" key={f.name}>
+                <span title={f.name}>{f.name}</span>
+                <code>{humanBytes(f.size)}</code>
+                <small>{timeAgo(f.mtime)}</small>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+interface RuntimeSummary {
+  pid?: string;
+  config?: string;
+  lastActivity?: number;
+  latestStatus?: string;
+  files: Array<{ name: string; size: number; mtime: number }>;
+  stderrCount: number;
+}
+
+function summarizeRuntime(events: AgentEvent[]): RuntimeSummary | null {
+  let latestDebug:
+    | { label: string; detail?: string | undefined; ts?: number | undefined }
+    | undefined;
+  let latestStatus: string | undefined;
+  let lastActivity: number | undefined;
+  let pid: string | undefined;
+  let config: string | undefined;
+  let files: RuntimeSummary['files'] = [];
+  let stderrCount = 0;
+
+  for (const ev of events) {
+    if (ev.kind === "status") {
+      latestStatus = ev.detail ? `${ev.label} · ${ev.detail}` : ev.label;
+      lastActivity = Date.now();
+    }
+    if (ev.kind === "debug") {
+      latestDebug = { label: ev.label, detail: ev.detail, ts: ev.ts };
+      lastActivity = ev.ts ?? Date.now();
+      if (ev.label === "config" && ev.detail) config = ev.detail;
+      if (ev.label === "stderr") stderrCount += 1;
+      const m = ev.detail?.match(/\bpid\s+(\d+)/i);
+      if (m?.[1]) pid = m[1];
+    }
+    if (ev.kind === "file_change") {
+      files = ev.files;
+      lastActivity = ev.ts ?? Date.now();
+    }
+  }
+
+  if (!latestDebug && !latestStatus && files.length === 0) return null;
+  return { pid, config, lastActivity, latestStatus, files, stderrCount };
+}
+
+function timeAgo(ts: number): string {
+  const sec = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (sec < 2) return "just now";
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.round(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  return `${Math.round(min / 60)}h ago`;
 }
 
 function assistantModelDetail(message: ChatMessage): string | null {

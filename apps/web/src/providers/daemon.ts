@@ -302,7 +302,8 @@ async function consumeDaemonRun({
           }
 
           if (event.event === 'stderr') {
-            stderrBuf += event.data.chunk ?? '';
+            const chunk = String(event.data.chunk ?? '');
+            stderrBuf += chunk;
             continue;
           }
 
@@ -325,6 +326,47 @@ async function consumeDaemonRun({
               label: 'starting',
               detail: typeof data.bin === 'string' ? data.bin : undefined,
             });
+            const model =
+              typeof data.model === 'string' && data.model ? data.model : 'default';
+            const reasoning =
+              typeof data.reasoning === 'string' && data.reasoning
+                ? data.reasoning
+                : 'default';
+            const resolvedModel =
+              typeof data.resolvedModel === 'string' && data.resolvedModel
+                ? data.resolvedModel
+                : null;
+            const resolvedReasoning =
+              typeof data.resolvedReasoning === 'string' && data.resolvedReasoning
+                ? data.resolvedReasoning
+                : null;
+            const streamFormat =
+              typeof data.streamFormat === 'string' && data.streamFormat
+                ? data.streamFormat
+                : 'plain';
+            const localProvider =
+              typeof data.localProvider === 'string' && data.localProvider
+                ? data.localProvider
+                : null;
+            const modelLabel =
+              model === 'default' && resolvedModel ? `default (${resolvedModel})` : model;
+            const reasoningLabel =
+              reasoning === 'default' && resolvedReasoning
+                ? `default (${resolvedReasoning})`
+                : reasoning;
+            handlers.onAgentEvent({
+              kind: 'debug',
+              label: 'config',
+              detail: [
+                localProvider ? `provider ${localProvider}` : null,
+                `model ${modelLabel}`,
+                `reasoning ${reasoningLabel}`,
+                streamFormat,
+              ]
+                .filter(Boolean)
+                .join(' · '),
+              ts: Date.now(),
+            });
             continue;
           }
 
@@ -340,6 +382,16 @@ async function consumeDaemonRun({
             exitSignal = typeof event.data.signal === 'string' ? event.data.signal : null;
             endStatus = isChatRunStatus(event.data.status) ? event.data.status : 'succeeded';
             onRunStatus?.(endStatus);
+            handlers.onAgentEvent({
+              kind: 'status',
+              label:
+                endStatus === 'succeeded'
+                  ? 'exited'
+                  : endStatus === 'canceled'
+                    ? 'canceled'
+                    : 'failed',
+              detail: exitSignal ? `signal ${exitSignal}` : `code ${exitCode ?? 'unknown'}`,
+            });
           }
         }
       }
@@ -403,7 +455,38 @@ function translateAgentEvent(data: DaemonAgentPayload): AgentEvent | null {
           ? data.model
           : typeof data.ttftMs === 'number'
             ? `first token in ${Math.round((data.ttftMs as number) / 100) / 10}s`
-            : undefined,
+          : undefined,
+    };
+  }
+  if (t === 'debug' && typeof data.label === 'string') {
+    return {
+      kind: 'debug',
+      label: data.label,
+      detail: typeof data.detail === 'string' ? data.detail : undefined,
+      ts: typeof data.ts === 'number' ? data.ts : undefined,
+    };
+  }
+  if (t === 'file_change' && Array.isArray(data.files)) {
+    const files = data.files
+      .map((file) => {
+        if (!file || typeof file !== 'object') return null;
+        const rec = file as unknown as Record<string, unknown>;
+        if (
+          typeof rec.name !== 'string' ||
+          typeof rec.size !== 'number' ||
+          typeof rec.mtime !== 'number'
+        ) {
+          return null;
+        }
+        return { name: rec.name, size: rec.size, mtime: rec.mtime };
+      })
+      .filter((file): file is { name: string; size: number; mtime: number } =>
+        Boolean(file),
+      );
+    return {
+      kind: 'file_change',
+      files,
+      ts: typeof data.ts === 'number' ? data.ts : undefined,
     };
   }
   if (t === 'text_delta' && typeof data.delta === 'string') {

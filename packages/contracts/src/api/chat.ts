@@ -87,6 +87,8 @@ export interface ChatCommentAttachment {
 
 export type PersistedAgentEvent =
   | { kind: 'status'; label: string; detail?: string }
+  | { kind: 'debug'; label: string; detail?: string; ts?: number }
+  | { kind: 'file_change'; files: AgentFileChange[]; ts?: number }
   | { kind: 'text'; text: string }
   | { kind: 'thinking'; text: string }
   | {
@@ -111,6 +113,12 @@ export type PersistedAgentEvent =
   | { kind: 'tool_result'; toolUseId: string; content: string; isError: boolean }
   | { kind: 'usage'; inputTokens?: number; outputTokens?: number; costUsd?: number; durationMs?: number }
   | { kind: 'raw'; line: string };
+
+export interface AgentFileChange {
+  name: string;
+  size: number;
+  mtime: number;
+}
 
 export interface ChatMessage {
   id: string;
