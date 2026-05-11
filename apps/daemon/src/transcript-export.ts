@@ -70,12 +70,20 @@ const LOCK_FILENAME = '.transcript.lock';
 // and the schema-mismatch tests will catch it.
 type PersistedAgentEvent =
   | { kind: 'status'; label: string; detail?: string }
+  | { kind: 'debug'; label: string; detail?: string; ts?: number }
+  | { kind: 'file_change'; files: AgentFileChange[]; ts?: number }
   | { kind: 'text'; text: string }
   | { kind: 'thinking'; text: string }
   | { kind: 'tool_use'; id: string; name: string; input: unknown }
   | { kind: 'tool_result'; toolUseId: string; content: string; isError: boolean }
   | { kind: 'usage'; inputTokens?: number; outputTokens?: number; costUsd?: number; durationMs?: number }
   | { kind: 'raw'; line: string };
+
+interface AgentFileChange {
+  name: string;
+  size: number;
+  mtime: number;
+}
 
 type Db = Database.Database;
 
@@ -470,8 +478,8 @@ function coalesceBlocks(events: PersistedAgentEvent[]): Block[] {
         if (ev.label === 'thinking') flush();
         break;
       }
-      // Telemetry: usage, raw — intentional drop, neither contributes
-      // content nor signals a content boundary.
+      // Telemetry: debug, file_change, usage, raw — intentional drop,
+      // neither contributes content nor signals a content boundary.
       default:
         break;
     }

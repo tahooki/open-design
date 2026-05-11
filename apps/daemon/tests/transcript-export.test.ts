@@ -50,12 +50,15 @@ type TranscriptLine = Record<string, unknown>;
 type TranscriptLines = TranscriptLine[];
 type PersistedAgentEvent =
   | { kind: 'status'; label: string; detail?: string }
+  | { kind: 'debug'; label: string; detail?: string; ts?: number }
+  | { kind: 'file_change'; files: AgentFileChange[]; ts?: number }
   | { kind: 'text'; text: string }
   | { kind: 'thinking'; text: string }
   | { kind: 'tool_use'; id: string; name: string; input: unknown }
   | { kind: 'tool_result'; toolUseId: string; content: string; isError: boolean }
   | { kind: 'usage'; inputTokens?: number; outputTokens?: number; costUsd?: number; durationMs?: number }
   | { kind: 'raw'; line: string };
+type AgentFileChange = { name: string; size: number; mtime: number };
 type ChatAttachment = { path: string; name: string; kind: string; size?: number };
 type ChatCommentAttachment = {
   id: string;
@@ -239,7 +242,7 @@ describe('exportProjectTranscript', () => {
     ]);
   });
 
-  it('drops status / usage / raw telemetry events without breaking content', () => {
+  it('drops status / debug / file-change / usage / raw telemetry events without breaking content', () => {
     const { db, projectsRoot } = setup();
     seedConversation(db, { id: 'c1', createdAt: 100 });
     seedMessage(db, 'c1', {
@@ -247,7 +250,13 @@ describe('exportProjectTranscript', () => {
       role: 'assistant',
       events: [
         { kind: 'status', label: 'streaming' },
+        { kind: 'debug', label: 'spawned', detail: 'pid 123', ts: 100 },
         { kind: 'thinking', text: 'reasoning' },
+        {
+          kind: 'file_change',
+          files: [{ name: 'index.html', size: 12, mtime: 200 }],
+          ts: 200,
+        },
         { kind: 'usage', inputTokens: 5 },
         { kind: 'text', text: 'answer' },
         { kind: 'raw', line: '??' },

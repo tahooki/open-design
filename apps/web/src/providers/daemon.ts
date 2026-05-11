@@ -232,6 +232,7 @@ async function consumeDaemonRun({
   let endStatus: ChatRunStatus | null = null;
   let lastEventId: string | null = initialLastEventId ?? null;
   let canceled = false;
+  let sawRunActivity = false;
   const cancelRun = () => {
     if (canceled) return;
     canceled = true;
@@ -295,6 +296,7 @@ async function consumeDaemonRun({
 
           if (event.event === 'stdout') {
             const chunk = String(event.data.chunk ?? '');
+            sawRunActivity = true;
             acc += chunk;
             handlers.onDelta(chunk);
             handlers.onAgentEvent({ kind: 'text', text: chunk });
@@ -303,12 +305,14 @@ async function consumeDaemonRun({
 
           if (event.event === 'stderr') {
             const chunk = String(event.data.chunk ?? '');
+            sawRunActivity = true;
             stderrBuf += chunk;
             continue;
           }
 
           if (event.event === 'agent') {
             const translated = translateAgentEvent(event.data);
+            sawRunActivity = true;
             if (!translated) continue;
             if (translated.kind === 'text') {
               acc += translated.text;
@@ -320,6 +324,7 @@ async function consumeDaemonRun({
 
           if (event.event === 'start') {
             const data = event.data as ChatSseStartPayload;
+            sawRunActivity = true;
             onRunStatus?.('running');
             handlers.onAgentEvent({
               kind: 'status',
@@ -382,16 +387,18 @@ async function consumeDaemonRun({
             exitSignal = typeof event.data.signal === 'string' ? event.data.signal : null;
             endStatus = isChatRunStatus(event.data.status) ? event.data.status : 'succeeded';
             onRunStatus?.(endStatus);
-            handlers.onAgentEvent({
-              kind: 'status',
-              label:
-                endStatus === 'succeeded'
-                  ? 'exited'
-                  : endStatus === 'canceled'
-                    ? 'canceled'
-                    : 'failed',
-              detail: exitSignal ? `signal ${exitSignal}` : `code ${exitCode ?? 'unknown'}`,
-            });
+            if (sawRunActivity) {
+              handlers.onAgentEvent({
+                kind: 'status',
+                label:
+                  endStatus === 'succeeded'
+                    ? 'exited'
+                    : endStatus === 'canceled'
+                      ? 'canceled'
+                      : 'failed',
+                detail: exitSignal ? `signal ${exitSignal}` : `code ${exitCode ?? 'unknown'}`,
+              });
+            }
           }
         }
       }
