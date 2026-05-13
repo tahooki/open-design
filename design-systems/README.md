@@ -43,6 +43,12 @@ will read it as part of its system prompt.
   | Media & Consumer | apple · ibm · nvidia · pinterest · playstation · spacex · spotify · theverge · uber · vodafone · wired · xiaohongshu |
   | Automotive | bmw · bugatti · ferrari · lamborghini · renault · tesla |
 
+- **5 Korean product systems**: `kakao`, `kakaopay`, `karrot`, and `toss`
+  are adapted from the MIT-licensed
+  [`oh-my-design-cli`](https://www.npmjs.com/package/oh-my-design-cli)
+  reference set; `wanted` is hand-authored from the local Montage / WDS source
+  tree. These are aesthetic inspirations, not official brand assets.
+
 Folders use ASCII slugs — dotted brands are normalized (`linear.app` →
 `linear-app`, `x.ai` → `x-ai`, etc.).
 
