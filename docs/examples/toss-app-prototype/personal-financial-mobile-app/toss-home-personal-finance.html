@@ -1,0 +1,545 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>toss — 홈</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <style>
+    :root {
+      --bg:        #f9fafb;
+      --surface:   #ffffff;
+      --surface-2: #f2f4f6;
+      --accent:    #3182f6;
+      --accent-hover: #2272eb;
+      --accent-soft: #e8f3ff;
+      --fg:        #191f28;
+      --label:     #4e5968;
+      --body:      #6b7684;
+      --muted:     #8b95a1;
+      --placeholder: #b0b8c1;
+      --border:    #e5e8eb;
+      --border-strong: #d1d6db;
+      --success:   #03b26c;
+      --danger:    #f04452;
+      --warn:      #fe9800;
+      --font: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+      --shadow-1: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-2: 0 2px 8px rgba(0,0,0,0.08);
+      --radius-card: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      color: var(--fg);
+      background: radial-gradient(80% 60% at 50% 0%, #eef1f5 0%, #e3e8ee 60%, #dde3eb 100%);
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 40px 24px;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    .tabular { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+    .device {
+      position: relative;
+      width: 414px; height: 868px;
+      border-radius: 56px;
+      background: #0c0c0e;
+      box-shadow:
+        0 0 0 2px #1f2024 inset,
+        0 0 0 12px #0c0c0e,
+        0 30px 60px -20px rgba(15, 23, 42, 0.45),
+        0 14px 30px -12px rgba(15, 23, 42, 0.30);
+      padding: 12px;
+    }
+    .device::before, .device::after { content: ""; position: absolute; background: #1f2024; }
+    .device::before { left: -3px; top: 180px; width: 3px; height: 100px; border-radius: 2px 0 0 2px; }
+    .device::after { right: -3px; top: 220px; width: 3px; height: 130px; border-radius: 0 2px 2px 0; }
+    .screen {
+      position: relative;
+      width: 390px; height: 844px;
+      border-radius: 44px;
+      overflow: hidden;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+    .status-bar {
+      position: relative; z-index: 5;
+      height: 54px; padding: 16px 32px 0;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      color: var(--fg);
+      font-size: 15px; font-weight: 600;
+      letter-spacing: -0.01em;
+      flex: 0 0 auto;
+    }
+    .status-bar .time { width: 60px; }
+    .status-bar .icons { display: flex; align-items: center; gap: 6px; width: 60px; justify-content: flex-end; }
+    .status-bar svg { display: block; }
+    .island {
+      position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+      width: 124px; height: 36px;
+      background: #000; border-radius: 20px;
+      z-index: 10; pointer-events: none;
+    }
+    .home-indicator {
+      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+      width: 134px; height: 5px; border-radius: 3px;
+      background: var(--fg); opacity: 0.35;
+      z-index: 6; pointer-events: none;
+    }
+    .app-header {
+      flex: 0 0 auto;
+      padding: 4px 20px 8px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg);
+    }
+    .wordmark { font-size: 22px; font-weight: 800; letter-spacing: -0.04em; color: var(--fg); }
+    .header-actions { display: flex; gap: 4px; }
+    .icon-btn {
+      width: 36px; height: 36px;
+      border: 0; background: transparent;
+      border-radius: 999px;
+      display: grid; place-items: center;
+      color: var(--fg); cursor: pointer;
+    }
+    .icon-btn:active { background: var(--surface-2); }
+    .icon-btn .dot {
+      position: absolute; transform: translate(8px, -8px);
+      width: 7px; height: 7px; border-radius: 999px;
+      background: var(--danger); border: 1.5px solid var(--bg);
+    }
+    .scroll { flex: 1 1 auto; overflow-y: auto; padding: 4px 0 100px; scrollbar-width: none; }
+    .scroll::-webkit-scrollbar { display: none; }
+    .section { padding: 0 20px; }
+    .section + .section { margin-top: 28px; }
+    .greet { padding: 8px 20px 0; }
+    .greet .hello { font-size: 14px; font-weight: 500; color: var(--label); letter-spacing: -0.01em; }
+    .greet .total-label { margin-top: 14px; font-size: 13px; font-weight: 500; color: var(--muted); }
+    .greet .total-row { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; }
+    .greet .total-amount { font-size: 32px; font-weight: 800; letter-spacing: -0.025em; color: var(--fg); line-height: 1.1; }
+    .greet .total-unit { font-size: 22px; font-weight: 600; color: var(--fg); letter-spacing: -0.02em; }
+    .greet .total-delta {
+      margin-top: 8px;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px; font-weight: 600; color: var(--success);
+      letter-spacing: -0.01em;
+    }
+    .greet .total-delta .sep { color: var(--muted); font-weight: 500; }
+    .greet .total-delta .note { color: var(--body); font-weight: 500; }
+    .account-main {
+      margin-top: 22px;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: 18px 18px 14px;
+      box-shadow: var(--shadow-2);
+    }
+    .account-main .row { display: flex; align-items: center; gap: 10px; }
+    .bank-mark {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: var(--accent); color: #fff;
+      font-size: 14px; font-weight: 800;
+      display: grid; place-items: center;
+      letter-spacing: -0.04em;
+    }
+    .account-main .name { font-size: 14px; font-weight: 600; color: var(--fg); letter-spacing: -0.01em; }
+    .account-main .acct { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .account-main .chev { margin-left: auto; color: var(--placeholder); }
+    .account-main .balance { margin-top: 14px; display: flex; align-items: baseline; gap: 4px; }
+    .account-main .balance .v { font-size: 26px; font-weight: 800; color: var(--fg); letter-spacing: -0.02em; }
+    .account-main .balance .u { font-size: 18px; font-weight: 600; color: var(--fg); letter-spacing: -0.01em; }
+    .account-main .actions { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn { border: 0; cursor: pointer; font-family: inherit; font-weight: 700; letter-spacing: -0.01em; }
+    .btn-fill { background: var(--accent); color: #fff; height: 44px; border-radius: 12px; font-size: 15px; }
+    .btn-fill:active { background: var(--accent-hover); }
+    .btn-weak { background: rgba(100, 168, 255, 0.15); color: #1b64da; height: 44px; border-radius: 12px; font-size: 15px; }
+    .linked {
+      margin-top: 14px;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-1);
+      overflow: hidden;
+    }
+    .linked .item { display: flex; align-items: center; gap: 12px; padding: 14px 18px; }
+    .linked .item + .item { border-top: 1px solid var(--border); }
+    .linked .mark {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: grid; place-items: center;
+      color: #fff;
+      font-size: 13px; font-weight: 800;
+      letter-spacing: -0.04em;
+      flex: 0 0 auto;
+    }
+    .linked .meta { flex: 1; min-width: 0; }
+    .linked .meta .n {
+      font-size: 14px; font-weight: 600; color: var(--fg);
+      letter-spacing: -0.01em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .linked .meta .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .linked .amt { text-align: right; font-size: 15px; font-weight: 700; color: var(--fg); letter-spacing: -0.01em; }
+    .linked .amt .u { font-size: 12px; font-weight: 500; color: var(--label); margin-left: 1px; }
+    .linked .add {
+      padding: 13px 18px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--label);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .linked .add span { color: var(--muted); font-size: 18px; line-height: 1; margin-bottom: 2px; }
+    .quick {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-top: 18px;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-1);
+      padding: 16px 8px;
+    }
+    .quick-item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+    .quick-item .ic {
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      display: grid; place-items: center;
+      color: var(--fg);
+    }
+    .quick-item .lb { font-size: 12px; font-weight: 500; color: var(--label); letter-spacing: -0.01em; }
+    .sec-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px; margin-bottom: 10px; }
+    .sec-head .title { font-size: 17px; font-weight: 700; color: var(--fg); letter-spacing: -0.02em; }
+    .sec-head .more { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: -0.01em; }
+    .month-card {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: 20px;
+      box-shadow: var(--shadow-1);
+    }
+    .month-card .head { display: flex; align-items: flex-end; justify-content: space-between; }
+    .month-card .left .lbl { font-size: 13px; color: var(--body); font-weight: 500; letter-spacing: -0.01em; }
+    .month-card .left .v { margin-top: 4px; font-size: 24px; font-weight: 800; color: var(--fg); letter-spacing: -0.025em; line-height: 1.1; }
+    .month-card .left .v .u { font-size: 16px; font-weight: 600; margin-left: 1px; }
+    .month-card .right { text-align: right; font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: -0.01em; line-height: 1.4; }
+    .month-card .right b { display: block; font-size: 13px; color: var(--label); font-weight: 700; letter-spacing: -0.01em; }
+    .progress { margin-top: 16px; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+    .progress .fill { height: 100%; width: 69%; background: var(--accent); border-radius: 999px; }
+    .progress-meta { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 500; }
+    .progress-meta b { color: var(--label); font-weight: 700; }
+    .cats { margin-top: 18px; display: grid; gap: 10px; }
+    .cat { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; }
+    .cat .ic { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; font-size: 12px; font-weight: 800; letter-spacing: -0.04em; }
+    .cat .nm { font-size: 14px; font-weight: 600; color: var(--fg); letter-spacing: -0.01em; }
+    .cat .nm .pct { font-size: 12px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+    .cat .amt { font-size: 14px; font-weight: 700; color: var(--fg); letter-spacing: -0.01em; }
+    .cat .amt .u { font-size: 12px; font-weight: 500; color: var(--label); margin-left: 1px; }
+    .credit { background: var(--surface); border-radius: var(--radius-card); padding: 18px 20px; box-shadow: var(--shadow-1); display: flex; align-items: center; gap: 16px; }
+    .credit-gauge { position: relative; width: 76px; height: 76px; flex: 0 0 auto; }
+    .credit-gauge svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .credit-gauge .score { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; font-weight: 800; color: var(--fg); letter-spacing: -0.025em; }
+    .credit .body { flex: 1; min-width: 0; }
+    .credit .body .t { font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: -0.01em; }
+    .credit .body .h { margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--fg); letter-spacing: -0.02em; }
+    .credit .body .h em { font-style: normal; color: var(--accent); }
+    .credit .body .n { margin-top: 8px; font-size: 12px; color: var(--body); font-weight: 500; letter-spacing: -0.01em; }
+    .txns { background: var(--surface); border-radius: var(--radius-card); box-shadow: var(--shadow-1); overflow: hidden; }
+    .txn-group { padding: 6px 18px 4px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--surface); }
+    .txn-group:first-of-type { padding-top: 14px; }
+    .txn { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 12px 18px; }
+    .txn + .txn { border-top: 1px solid var(--border); }
+    .txn .ic { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex: 0 0 auto; font-weight: 700; font-size: 13px; letter-spacing: -0.04em; }
+    .txn .meta { min-width: 0; }
+    .txn .meta .name { font-size: 14px; font-weight: 600; color: var(--fg); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txn .meta .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .txn .right { text-align: right; }
+    .txn .right .v { font-size: 14px; font-weight: 700; color: var(--fg); letter-spacing: -0.01em; }
+    .txn .right .v.pos { color: var(--success); }
+    .txn .right .bal { margin-top: 2px; font-size: 11px; color: var(--muted); font-weight: 500; }
+    .tab-bar {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 78px;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-top: 1px solid var(--border);
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      align-items: start; padding: 8px 0 22px;
+    }
+    .tab { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--placeholder); cursor: pointer; }
+    .tab.active { color: var(--fg); }
+    .tab .lb { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; }
+    @media (-webkit-min-device-pixel-ratio: 2) {
+      .linked .item + .item, .txn + .txn { border-top-width: 0.5px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="device" aria-label="iPhone 15 Pro frame">
+    <div class="screen">
+      <div class="status-bar">
+        <div class="time tabular">9:41</div>
+        <div class="island"></div>
+        <div class="icons" aria-hidden="true">
+          <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="5" y="5" width="3" height="6" rx="0.6"/><rect x="10" y="3" width="3" height="8" rx="0.6"/><rect x="15" y="0" width="3" height="11" rx="0.6"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path d="M8 10a1.2 1.2 0 1 0 0-2.4A1.2 1.2 0 0 0 8 10Z" fill="currentColor"/><path d="M3.4 6.4a6.5 6.5 0 0 1 9.2 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M.8 3.6a10.2 10.2 0 0 1 14.4 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.6" y="0.6" width="22" height="10.8" rx="2.5" stroke="currentColor" stroke-opacity="0.4" stroke-width="1"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="currentColor"/><rect x="23.5" y="4" width="1.6" height="4" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+        </div>
+      </div>
+      <header class="app-header">
+        <div class="wordmark">toss</div>
+        <div class="header-actions">
+          <button class="icon-btn" aria-label="검색">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg>
+          </button>
+          <button class="icon-btn" aria-label="알림" style="position:relative;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+            <span class="dot"></span>
+          </button>
+        </div>
+      </header>
+      <div class="scroll">
+        <div class="greet">
+          <div class="hello">정민님, 좋은 아침이에요</div>
+          <div class="total-label">총 자산</div>
+          <div class="total-row">
+            <div class="total-amount tabular">12,847,320</div>
+            <div class="total-unit">원</div>
+          </div>
+          <div class="total-delta">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="M5 1.5 9 7H1z"/></svg>
+            <span class="tabular">285,400원</span>
+            <span class="sep">·</span>
+            <span class="note">이번 달 +2.3%</span>
+          </div>
+        </div>
+        <section class="section">
+          <div class="account-main">
+            <div class="row">
+              <div class="bank-mark" aria-hidden="true">t</div>
+              <div>
+                <div class="name">토스뱅크 입출금 통장</div>
+                <div class="acct tabular">100-2049-3815</div>
+              </div>
+              <div class="chev" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 4 4-4 4"/></svg>
+              </div>
+            </div>
+            <div class="balance">
+              <div class="v tabular">3,247,580</div>
+              <div class="u">원</div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-fill" type="button">송금하기</button>
+              <button class="btn btn-weak" type="button">채우기</button>
+            </div>
+          </div>
+          <div class="linked" aria-label="연결된 다른 계좌">
+            <div class="item">
+              <div class="mark" style="background:#FFBC00;">KB</div>
+              <div class="meta">
+                <div class="n">국민은행 입출금</div>
+                <div class="s tabular">123-12-3815-829</div>
+              </div>
+              <div class="amt"><span class="tabular">1,243,990</span><span class="u">원</span></div>
+            </div>
+            <div class="item">
+              <div class="mark" style="background:#0067AC;">우</div>
+              <div class="meta">
+                <div class="n">우리은행 자유적금</div>
+                <div class="s">매월 25일 · 18개월 차</div>
+              </div>
+              <div class="amt"><span class="tabular">8,355,750</span><span class="u">원</span></div>
+            </div>
+            <div class="add" role="button">
+              <span>＋</span>
+              계좌 추가하기
+            </div>
+          </div>
+        </section>
+        <section class="section">
+          <div class="quick">
+            <div class="quick-item">
+              <div class="ic">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13"/><path d="m12 7 5 5-5 5"/><path d="M20 5v14"/></svg>
+              </div>
+              <div class="lb">송금</div>
+            </div>
+            <div class="quick-item">
+              <div class="ic">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H7"/><path d="m12 7-5 5 5 5"/><path d="M4 5v14"/></svg>
+              </div>
+              <div class="lb">받기</div>
+            </div>
+            <div class="quick-item">
+              <div class="ic">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>
+              </div>
+              <div class="lb">카드</div>
+            </div>
+            <div class="quick-item">
+              <div class="ic">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v8h18v-8"/><path d="M2 7h20v4H2z"/><path d="M12 22V7"/><path d="M12 7s-2-4-4.5-4S5 5 5 5.5 5.5 7 9 7"/><path d="M12 7s2-4 4.5-4S19 5 19 5.5 18.5 7 15 7"/></svg>
+              </div>
+              <div class="lb">혜택</div>
+            </div>
+          </div>
+        </section>
+        <section class="section">
+          <div class="sec-head">
+            <div class="title">이번 달 소비</div>
+            <div class="more">5월 · 자세히 ›</div>
+          </div>
+          <div class="month-card">
+            <div class="head">
+              <div class="left">
+                <div class="lbl">5월 1일 — 오늘까지</div>
+                <div class="v"><span class="tabular">1,247,840</span><span class="u">원</span></div>
+              </div>
+              <div class="right">
+                <b>예산 1,800,000원</b>
+                남은 13일 · 552,160원
+              </div>
+            </div>
+            <div class="progress" aria-label="예산의 69% 사용"><div class="fill"></div></div>
+            <div class="progress-meta">
+              <span><b class="tabular">69%</b> 사용</span>
+              <span>지난달보다 <b style="color:var(--success);">8.1% 적어요</b></span>
+            </div>
+            <div class="cats">
+              <div class="cat">
+                <div class="ic" style="background:#FFF1E6; color:#E25C00;">식</div>
+                <div class="nm">식비·카페 <span class="pct">28%</span></div>
+                <div class="amt"><span class="tabular">348,920</span><span class="u">원</span></div>
+              </div>
+              <div class="cat">
+                <div class="ic" style="background:#E8F3FF; color:#1B64DA;">교</div>
+                <div class="nm">교통 <span class="pct">19%</span></div>
+                <div class="amt"><span class="tabular">236,400</span><span class="u">원</span></div>
+              </div>
+              <div class="cat">
+                <div class="ic" style="background:#F1ECFF; color:#7042C9;">쇼</div>
+                <div class="nm">쇼핑 <span class="pct">17%</span></div>
+                <div class="amt"><span class="tabular">212,150</span><span class="u">원</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="section">
+          <div class="credit">
+            <div class="credit-gauge" aria-label="신용점수 743점">
+              <svg viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="34" stroke="#E5E8EB" stroke-width="6" fill="none"/>
+                <circle cx="40" cy="40" r="34" stroke="#3182f6" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="49.4"/>
+              </svg>
+              <div class="score tabular">743</div>
+            </div>
+            <div class="body">
+              <div class="t">KCB 기준 · 5월 12일 업데이트</div>
+              <div class="h">신용점수가 <em>+12점</em> 올랐어요</div>
+              <div class="n">상위 22% · 작년 같은 달 대비 +38점</div>
+            </div>
+            <div style="color:var(--placeholder);" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 4 4-4 4"/></svg>
+            </div>
+          </div>
+        </section>
+        <section class="section">
+          <div class="sec-head">
+            <div class="title">최근 거래내역</div>
+            <div class="more">전체보기 ›</div>
+          </div>
+          <div class="txns">
+            <div class="txn-group">오늘</div>
+            <div class="txn">
+              <div class="ic" style="background:#E8F8F1; color:#03B26C;">스</div>
+              <div class="meta">
+                <div class="name">스타벅스 강남2호점</div>
+                <div class="sub">9:24 · 식비·카페</div>
+              </div>
+              <div class="right">
+                <div class="v"><span class="tabular">-5,400</span>원</div>
+                <div class="bal tabular">잔액 3,247,580원</div>
+              </div>
+            </div>
+            <div class="txn">
+              <div class="ic" style="background:#E8F3FF; color:#1B64DA;">김</div>
+              <div class="meta">
+                <div class="name">김지호</div>
+                <div class="sub">8:11 · 카카오뱅크에서 입금</div>
+              </div>
+              <div class="right">
+                <div class="v pos"><span class="tabular">+25,000</span>원</div>
+                <div class="bal tabular">잔액 3,252,980원</div>
+              </div>
+            </div>
+            <div class="txn-group">어제 · 5월 12일</div>
+            <div class="txn">
+              <div class="ic" style="background:#FFF1E6; color:#E25C00;">쿠</div>
+              <div class="meta">
+                <div class="name">쿠팡</div>
+                <div class="sub">21:48 · 쇼핑</div>
+              </div>
+              <div class="right">
+                <div class="v"><span class="tabular">-28,900</span>원</div>
+                <div class="bal tabular">잔액 3,227,980원</div>
+              </div>
+            </div>
+            <div class="txn">
+              <div class="ic" style="background:#F1ECFF; color:#7042C9;">증</div>
+              <div class="meta">
+                <div class="name">토스증권 · 주식 매수</div>
+                <div class="sub">14:02 · 삼성전자 5주</div>
+              </div>
+              <div class="right">
+                <div class="v"><span class="tabular">-350,000</span>원</div>
+                <div class="bal tabular">잔액 3,256,880원</div>
+              </div>
+            </div>
+            <div class="txn-group">5월 10일 (금)</div>
+            <div class="txn">
+              <div class="ic" style="background:#E8F8F1; color:#03B26C;">㈜</div>
+              <div class="meta">
+                <div class="name">㈜래블업 · 급여</div>
+                <div class="sub">9:00 · 월급 입금</div>
+              </div>
+              <div class="right">
+                <div class="v pos"><span class="tabular">+4,200,000</span>원</div>
+                <div class="bal tabular">잔액 3,606,880원</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="tab-bar" aria-label="메인 탭">
+        <div class="tab active">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 3 11v9.5A1.5 1.5 0 0 0 4.5 22H9v-6h6v6h4.5a1.5 1.5 0 0 0 1.5-1.5V11l-9-8Z"/></svg>
+          <div class="lb">홈</div>
+        </div>
+        <div class="tab">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7.5"/><path d="M2 7h20v4.5H2z"/><path d="M12 22V7"/><path d="M12 7s-1.5-4-4.5-4S5 5 5 5.5 5.5 7 9 7"/><path d="M12 7s1.5-4 4.5-4S19 5 19 5.5 18.5 7 15 7"/></svg>
+          <div class="lb">혜택</div>
+        </div>
+        <div class="tab">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13"/><path d="m12 7 5 5-5 5"/><path d="M20 5v14"/></svg>
+          <div class="lb">송금</div>
+        </div>
+        <div class="tab">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V8m5 11V5m5 14v-7m5 7V11"/></svg>
+          <div class="lb">주식</div>
+        </div>
+        <div class="tab">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><circle cx="12" cy="12" r="2"/></svg>
+          <div class="lb">전체</div>
+        </div>
+      </nav>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</body>
+</html>

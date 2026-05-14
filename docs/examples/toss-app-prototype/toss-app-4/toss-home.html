@@ -1,0 +1,774 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>토스 — 홈</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+  :root {
+    --bg-page:        #F2F4F6;
+    --surface:        #FFFFFF;
+    --surface-hover:  #F9FAFB;
+    --divider:        #F2F4F6;
+    --line:           #E5E8EB;
+
+    --text-1:         #191F28;
+    --text-2:         #4E5968;
+    --text-3:         #8B95A1;
+    --text-4:         #B0B8C1;
+
+    --accent:         #3182F6;
+    --accent-soft:    #E8F2FE;
+    --up:             #F04452;
+    --down:           #3182F6;
+
+    --shadow-card:    0 1px 2px rgba(0,0,0,0.04);
+
+    --r-card:         16px;
+    --r-pill:         999px;
+
+    --font-sans:      "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+                      "Apple SD Gothic Neo", "Segoe UI", Roboto, system-ui, sans-serif;
+    --font-num:       "Pretendard Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: #E5E8EB;
+    color: var(--text-1);
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 32px 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .phone {
+    position: relative;
+    width: 393px;
+    height: 852px;
+    background: #000;
+    border-radius: 55px;
+    padding: 11px;
+    box-shadow:
+      0 0 0 1.5px #2a2a2a,
+      0 0 0 8px #1a1a1a,
+      0 30px 60px -15px rgba(0,0,0,0.45),
+      0 12px 24px -8px rgba(0,0,0,0.25);
+  }
+  .phone .buttons-left,
+  .phone .buttons-right {
+    position: absolute; width: 4px; top: 0; height: 100%;
+  }
+  .phone .buttons-left  { left: -10px; }
+  .phone .buttons-right { right: -10px; }
+  .phone .buttons-left span,
+  .phone .buttons-right span {
+    position: absolute; width: 4px; background: #1a1a1a; border-radius: 2px;
+  }
+  .phone .buttons-left .action  { top: 110px; height: 32px; }
+  .phone .buttons-left .vol-up  { top: 165px; height: 56px; }
+  .phone .buttons-left .vol-dn  { top: 235px; height: 56px; }
+  .phone .buttons-right .power  { top: 200px; height: 90px; }
+
+  .screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-page);
+    border-radius: 44px;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .status-bar {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 54px;
+    padding: 18px 32px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 50;
+    pointer-events: none;
+    color: var(--text-1);
+  }
+  .status-bar .time {
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .status-bar .right { display: flex; align-items: center; gap: 6px; }
+  .signal-icon { width: 18px; height: 12px; }
+  .wifi-icon   { width: 17px; height: 12px; }
+  .battery {
+    width: 27px; height: 13px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    position: relative;
+    opacity: 0.9;
+  }
+  .battery::before {
+    content: ""; position: absolute;
+    top: 2px; left: 2px; bottom: 2px; right: 6px;
+    background: currentColor;
+    border-radius: 2px;
+  }
+  .battery::after {
+    content: ""; position: absolute;
+    right: -3px; top: 3px; bottom: 3px;
+    width: 2px; background: currentColor;
+    border-radius: 0 1px 1px 0;
+    opacity: 0.6;
+  }
+
+  .dynamic-island {
+    position: absolute;
+    top: 11px; left: 50%;
+    transform: translateX(-50%);
+    width: 126px; height: 37px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 60;
+  }
+
+  .content {
+    position: absolute;
+    inset: 54px 0 84px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .content::-webkit-scrollbar { display: none; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 20px 16px;
+  }
+  .logo {
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: -0.04em;
+    color: var(--accent);
+  }
+  .top-actions { display: flex; align-items: center; gap: 4px; }
+  .icon-btn {
+    position: relative;
+    width: 40px; height: 40px;
+    display: grid; place-items: center;
+    border: 0; background: transparent;
+    color: var(--text-1);
+    cursor: pointer;
+    border-radius: 12px;
+  }
+  .icon-btn:active { background: var(--surface-hover); }
+  .icon-btn svg { width: 24px; height: 24px; }
+  .icon-btn .badge {
+    position: absolute;
+    width: 6px; height: 6px;
+    background: var(--up);
+    border-radius: 50%;
+    top: 9px; right: 9px;
+  }
+
+  .group {
+    background: var(--surface);
+    margin: 0 16px 12px;
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .group-header {
+    padding: 18px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .group-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-3);
+    letter-spacing: -0.01em;
+  }
+  .group-action {
+    font-size: 13px;
+    color: var(--text-3);
+    background: transparent;
+    border: 0;
+    padding: 4px;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    cursor: pointer;
+    position: relative;
+  }
+  .row + .row { padding-top: 12px; padding-bottom: 12px; }
+  .row:active { background: var(--surface-hover); }
+
+  .bank-icon {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: -0.04em;
+  }
+  .bank-icon.toss   { background: var(--accent);  color: #fff; }
+  .bank-icon.kakao  { background: #FEE500;        color: #191F28; }
+  .bank-icon.shinhan{ background: #0046FF;        color: #fff; }
+  .bank-icon.card   { background: #191F28;        color: #fff; font-size: 14px; }
+  .bank-icon.stock  { background: linear-gradient(135deg, #FF6F61, #F04452); color: #fff; }
+  .bank-icon.add    { background: var(--bg-page); color: var(--text-3); }
+
+  .row-meta { flex: 1; min-width: 0; }
+  .row-label {
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  .row-value {
+    font-family: var(--font-num);
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+    line-height: 1.2;
+  }
+  .row-value .won { font-size: 16px; font-weight: 700; margin-left: 1px; }
+  .row-sub {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 3px;
+    letter-spacing: -0.01em;
+  }
+  .row-sub .up   { color: var(--up); font-weight: 600; }
+  .row-sub .down { color: var(--down); font-weight: 600; }
+
+  .row-cta {
+    flex-shrink: 0;
+    background: var(--bg-page);
+    color: var(--text-1);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 0;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+  }
+  .row-cta.primary { background: var(--accent); color: #fff; }
+  .row-cta:active { opacity: 0.85; }
+
+  .row-add {
+    color: var(--text-2);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .spend-card {
+    background: var(--surface);
+    margin: 0 16px 12px;
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow-card);
+    padding: 22px 20px;
+    cursor: pointer;
+  }
+  .spend-card:active { background: var(--surface-hover); }
+  .spend-label {
+    font-size: 14px;
+    color: var(--text-2);
+    letter-spacing: -0.02em;
+  }
+  .spend-label b { color: var(--text-1); font-weight: 700; }
+  .spend-amount {
+    font-family: var(--font-num);
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-1);
+  }
+  .spend-amount .won { font-size: 22px; font-weight: 700; margin-left: 2px; }
+  .spend-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--divider);
+  }
+  .spend-foot-label {
+    font-size: 13px;
+    color: var(--text-2);
+    letter-spacing: -0.01em;
+  }
+  .spend-foot-value {
+    font-family: var(--font-num);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-1);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 12px;
+    color: var(--up);
+    font-weight: 600;
+    margin-left: 4px;
+  }
+
+  .promo {
+    background: var(--surface);
+    margin: 0 16px 12px;
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow-card);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+  }
+  .promo:active { background: var(--surface-hover); }
+  .promo-text { flex: 1; min-width: 0; }
+  .promo-eyebrow {
+    font-size: 12px;
+    color: var(--text-3);
+    letter-spacing: -0.01em;
+  }
+  .promo-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.025em;
+    line-height: 1.35;
+    margin-top: 4px;
+  }
+  .promo-meta {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-top: 6px;
+    letter-spacing: -0.01em;
+  }
+  .promo-illust {
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    font-size: 28px;
+    font-weight: 800;
+  }
+  .promo-illust.score {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-family: var(--font-num);
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .promo-illust.invite {
+    background: linear-gradient(135deg, #FFE57F, #FFC107);
+    color: #5D4037;
+  }
+
+  .quick {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    background: var(--surface);
+    margin: 0 16px 12px;
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow-card);
+    padding: 12px 8px;
+  }
+  .quick-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 4px;
+    cursor: pointer;
+    border-radius: 12px;
+    color: var(--text-1);
+    background: transparent;
+    border: 0;
+  }
+  .quick-item:active { background: var(--surface-hover); }
+  .quick-icon {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--bg-page);
+    display: grid; place-items: center;
+    color: var(--text-1);
+  }
+  .quick-icon svg { width: 22px; height: 22px; }
+  .quick-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--text-2);
+  }
+
+  .tab-bar {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 84px;
+    padding: 8px 0 34px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    z-index: 40;
+  }
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--text-3);
+    padding: 2px 0;
+  }
+  .tab svg { width: 26px; height: 26px; }
+  .tab span {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .tab.active { color: var(--text-1); }
+  .tab.active svg { color: var(--text-1); }
+
+  .home-indicator {
+    position: absolute;
+    bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 134px; height: 5px;
+    background: var(--text-1);
+    border-radius: 3px;
+    z-index: 70;
+    opacity: 0.95;
+  }
+
+  .footer-pad { height: 16px; }
+
+  .caption {
+    position: fixed;
+    bottom: 18px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #6b7682;
+    letter-spacing: -0.01em;
+  }
+
+  @media (max-width: 460px) {
+    body { padding: 0; background: var(--bg-page); }
+    .phone {
+      width: 100vw; height: 100vh;
+      border-radius: 0; padding: 0;
+      box-shadow: none;
+    }
+    .phone .buttons-left, .phone .buttons-right { display: none; }
+    .screen { border-radius: 0; }
+    .caption { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="phone" role="img" aria-label="iPhone 15 Pro frame">
+  <div class="buttons-left">
+    <span class="action"></span>
+    <span class="vol-up"></span>
+    <span class="vol-dn"></span>
+  </div>
+  <div class="buttons-right">
+    <span class="power"></span>
+  </div>
+
+  <div class="screen">
+
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <span class="right">
+        <svg class="signal-icon" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true">
+          <rect x="0"  y="8" width="3" height="4"  rx="0.6"/>
+          <rect x="5"  y="5" width="3" height="7"  rx="0.6"/>
+          <rect x="10" y="2" width="3" height="10" rx="0.6"/>
+          <rect x="15" y="0" width="3" height="12" rx="0.6"/>
+        </svg>
+        <svg class="wifi-icon" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+          <path d="M8.5 11.2a1.1 1.1 0 100-2.2 1.1 1.1 0 000 2.2z"/>
+          <path d="M2.6 5.5a8.4 8.4 0 0111.8 0l-1.4 1.4a6.4 6.4 0 00-9 0L2.6 5.5z"/>
+          <path d="M5 7.9a5 5 0 017 0L10.6 9.3a3 3 0 00-4.2 0L5 7.9z"/>
+        </svg>
+        <span class="battery" aria-label="100% 배터리"></span>
+      </span>
+    </div>
+    <div class="dynamic-island" aria-hidden="true"></div>
+
+    <div class="content">
+
+      <div class="top-bar">
+        <div class="logo">toss</div>
+        <div class="top-actions">
+          <button class="icon-btn" aria-label="검색">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+            </svg>
+          </button>
+          <button class="icon-btn" aria-label="알림">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span class="badge"></span>
+          </button>
+          <button class="icon-btn" aria-label="설정">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4"  y1="6"  x2="20" y2="6"/>
+              <line x1="4"  y1="12" x2="20" y2="12"/>
+              <line x1="4"  y1="18" x2="20" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <section class="group" aria-label="내 통장">
+        <header class="group-header">
+          <span class="group-title">내 통장</span>
+          <button class="group-action">전체보기</button>
+        </header>
+
+        <div class="row">
+          <div class="bank-icon toss">T</div>
+          <div class="row-meta">
+            <div class="row-label">토스뱅크 통장</div>
+            <div class="row-value">3,847,200<span class="won">원</span></div>
+          </div>
+          <button class="row-cta primary">송금</button>
+        </div>
+
+        <div class="row">
+          <div class="bank-icon kakao">k</div>
+          <div class="row-meta">
+            <div class="row-label">카카오뱅크 입출금</div>
+            <div class="row-value">1,250,000<span class="won">원</span></div>
+          </div>
+          <button class="row-cta">송금</button>
+        </div>
+
+        <div class="row">
+          <div class="bank-icon shinhan">신</div>
+          <div class="row-meta">
+            <div class="row-label">신한 주거래우대통장</div>
+            <div class="row-value">152,840<span class="won">원</span></div>
+          </div>
+          <button class="row-cta">송금</button>
+        </div>
+
+        <div class="row">
+          <div class="bank-icon add">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+          <div class="row-meta">
+            <div class="row-add">계좌 추가하기</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="group" aria-label="내 카드">
+        <header class="group-header">
+          <span class="group-title">내 카드</span>
+          <button class="group-action">전체보기</button>
+        </header>
+
+        <div class="row">
+          <div class="bank-icon card">카드</div>
+          <div class="row-meta">
+            <div class="row-label">토스카드 · 일시불</div>
+            <div class="row-value">643,210<span class="won">원</span></div>
+            <div class="row-sub">5월 결제 예정 · 결제일 25일</div>
+          </div>
+          <button class="row-cta">내역</button>
+        </div>
+      </section>
+
+      <section class="group" aria-label="투자">
+        <header class="group-header">
+          <span class="group-title">투자</span>
+          <button class="group-action">전체보기</button>
+        </header>
+
+        <div class="row">
+          <div class="bank-icon stock">증</div>
+          <div class="row-meta">
+            <div class="row-label">토스증권 계좌</div>
+            <div class="row-value">9,832,500<span class="won">원</span></div>
+            <div class="row-sub">평가손익 <span class="up">+248,300원 (+2.59%)</span></div>
+          </div>
+          <button class="row-cta">매수</button>
+        </div>
+      </section>
+
+      <section class="spend-card" aria-label="이번 달 소비">
+        <div class="spend-label">5월에 <b>이수민</b>님이 쓴 돈</div>
+        <div class="spend-amount">982,340<span class="won">원</span></div>
+        <div class="spend-foot">
+          <span class="spend-foot-label">지난달 보다</span>
+          <span class="spend-foot-value">
+            843,520원
+            <span class="delta">▲ 16%</span>
+          </span>
+        </div>
+      </section>
+
+      <section class="quick" aria-label="빠른 메뉴">
+        <button class="quick-item">
+          <span class="quick-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 17 17 7"/><path d="M9 7h8v8"/>
+            </svg>
+          </span>
+          <span class="quick-label">송금</span>
+        </button>
+        <button class="quick-item">
+          <span class="quick-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 7 7 17"/><path d="M15 17H7V9"/>
+            </svg>
+          </span>
+          <span class="quick-label">받기</span>
+        </button>
+        <button class="quick-item">
+          <span class="quick-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="6" width="18" height="13" rx="2"/>
+              <line x1="3" y1="11" x2="21" y2="11"/>
+            </svg>
+          </span>
+          <span class="quick-label">결제</span>
+        </button>
+        <button class="quick-item">
+          <span class="quick-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="4" width="6" height="6" rx="1"/>
+              <rect x="14" y="4" width="6" height="6" rx="1"/>
+              <rect x="4" y="14" width="6" height="6" rx="1"/>
+              <line x1="14" y1="14" x2="20" y2="14"/>
+              <line x1="14" y1="17" x2="17" y2="17"/>
+              <line x1="14" y1="20" x2="20" y2="20"/>
+              <line x1="17" y1="14" x2="17" y2="20"/>
+            </svg>
+          </span>
+          <span class="quick-label">QR결제</span>
+        </button>
+      </section>
+
+      <section class="promo" aria-label="신용점수">
+        <div class="promo-text">
+          <div class="promo-eyebrow">내 신용점수 · NICE</div>
+          <div class="promo-title">지난달보다 12점 올랐어요</div>
+          <div class="promo-meta">자세히 보기 →</div>
+        </div>
+        <div class="promo-illust score">880</div>
+      </section>
+
+      <section class="promo" aria-label="친구 초대">
+        <div class="promo-text">
+          <div class="promo-eyebrow">친구 초대</div>
+          <div class="promo-title">친구가 토스 시작하면<br/>둘 다 10,000원씩 받아요</div>
+          <div class="promo-meta">초대 링크 보내기 →</div>
+        </div>
+        <div class="promo-illust invite">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2 14.6 8.3 21.5 9 16.5 13.6 17.9 20.3 12 17.2 6.1 20.3 7.5 13.6 2.5 9 9.4 8.3z"/>
+          </svg>
+        </div>
+      </section>
+
+      <div class="footer-pad"></div>
+    </div>
+
+    <nav class="tab-bar" aria-label="메인 탭">
+      <button class="tab active" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-8.5z"/>
+        </svg>
+        <span>홈</span>
+      </button>
+      <button class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        <span>혜택</span>
+      </button>
+      <button class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
+        </svg>
+        <span>송금</span>
+      </button>
+      <button class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="3 17 9 11 13 15 21 7"/>
+          <polyline points="15 7 21 7 21 13"/>
+        </svg>
+        <span>주식</span>
+      </button>
+      <button class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+        <span>전체</span>
+      </button>
+    </nav>
+
+    <div class="home-indicator" aria-hidden="true"></div>
+  </div>
+</div>
+
+<div class="caption">토스 — 홈 · iPhone 15 Pro · 단일 화면 프로토타입</div>
+
+<script>
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

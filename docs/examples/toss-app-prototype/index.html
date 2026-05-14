@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Toss app prototype snapshots</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #191f28;
+      --muted: #6b7684;
+      --line: #e5e8eb;
+      --blue: #3182f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(960px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    a {
+      display: block;
+      min-height: 132px;
+      padding: 20px;
+      color: inherit;
+      text-decoration: none;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    a:hover {
+      border-color: rgba(49, 130, 246, 0.55);
+      box-shadow: 0 14px 34px rgba(49, 130, 246, 0.13);
+      transform: translateY(-2px);
+    }
+
+    strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 17px;
+      line-height: 1.35;
+    }
+
+    span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .tag {
+      width: fit-content;
+      margin-bottom: 16px;
+      padding: 5px 9px;
+      color: var(--blue);
+      background: rgba(49, 130, 246, 0.1);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="tag">Open Design snapshots</div>
+      <h1>Toss app prototype snapshots</h1>
+      <p>Completed HTML prototype artifacts copied from local Open Design runtime data for sharing through git.</p>
+    </header>
+
+    <section class="grid" aria-label="Prototype pages">
+      <a href="./personal-financial-mobile-app/toss-home-personal-finance.html">
+        <strong>Personal Financial Mobile App</strong>
+        <span>personal-financial-mobile-app/toss-home-personal-finance.html</span>
+      </a>
+      <a href="./toss-app-2/toss-home.html">
+        <strong>토스앱 2</strong>
+        <span>toss-app-2/toss-home.html</span>
+      </a>
+      <a href="./toss-app-4/toss-home.html">
+        <strong>토스앱 4</strong>
+        <span>toss-app-4/toss-home.html</span>
+      </a>
+      <a href="./toss-5/toss-home.html">
+        <strong>토스 5</strong>
+        <span>toss-5/toss-home.html</span>
+      </a>
+      <a href="./toss-6-codex/toss-home-assets.html">
+        <strong>토스 6 codex</strong>
+        <span>toss-6-codex/toss-home-assets.html</span>
+      </a>
+    </section>
+  </main>
+</body>
+</html>

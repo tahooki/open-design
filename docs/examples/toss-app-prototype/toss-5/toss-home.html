@@ -1,0 +1,205 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>토스 — 홈</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --grey-50:  #f9fafb;
+    --grey-100: #f2f4f6;
+    --grey-200: #e5e8eb;
+    --grey-300: #d1d6db;
+    --grey-400: #b0b8c1;
+    --grey-500: #8b95a1;
+    --grey-600: #6b7684;
+    --grey-700: #4e5968;
+    --grey-800: #333d4b;
+    --grey-900: #191f28;
+    --blue-50:  #e8f3ff;
+    --blue-500: #3182f6;
+    --blue-600: #2272eb;
+    --red-500:  #f04452;
+    --green-500:#03b26c;
+    --green-50: #e6f7ef;
+    --font-display:
+      "Toss Product Sans", "Pretendard", "SF Pro KR", "SF Pro Display",
+      -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+      "Noto Sans KR", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    font-family: var(--font-display);
+    color: var(--grey-900);
+    background: radial-gradient(120% 80% at 50% 0%, #2a2e3a 0%, #14161d 70%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+  }
+  .stage { min-height: 100dvh; display: grid; place-items: center; padding: 48px 20px; }
+  .device {
+    width: 390px; height: 844px; position: relative; background: #0a0a0c;
+    border-radius: 55px; padding: 10px;
+    box-shadow: inset 0 0 0 2px #2a2c33, 0 0 0 1px #3a3c43,
+      0 50px 120px -20px rgba(0,0,0,0.55), 0 25px 60px -25px rgba(0,0,0,0.4);
+  }
+  .screen { width: 100%; height: 100%; background: var(--grey-100); border-radius: 47px; overflow: hidden; position: relative; isolation: isolate; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 126px; height: 37px; background: #000; border-radius: 19px; z-index: 1000; }
+  .statusbar { position: absolute; inset: 0 0 auto 0; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 18px 32px 0; z-index: 999; pointer-events: none; }
+  .statusbar .time { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; color: var(--grey-900); font-feature-settings: "tnum" 1; }
+  .statusbar .icons { display: flex; align-items: center; gap: 6px; color: var(--grey-900); }
+  .statusbar svg { display: block; }
+  .home-indicator { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; background: var(--grey-900); border-radius: 3px; opacity: 0.9; z-index: 1001; }
+  .app { position: absolute; inset: 0; padding-top: 54px; padding-bottom: 84px; overflow-y: auto; background: var(--grey-100); scrollbar-width: none; }
+  .app::-webkit-scrollbar { display: none; }
+  .app-bar { display: flex; align-items: center; justify-content: space-between; padding: 6px 20px 2px; }
+  .wordmark { font-size: 24px; font-weight: 800; letter-spacing: -0.05em; color: var(--blue-500); line-height: 1; padding: 6px 0; }
+  .app-bar-icons { display: flex; gap: 2px; }
+  .icon-btn { width: 38px; height: 38px; display: grid; place-items: center; color: var(--grey-800); position: relative; }
+  .icon-btn .dot { position: absolute; top: 6px; right: 8px; width: 7px; height: 7px; background: var(--red-500); border-radius: 50%; border: 1.5px solid var(--grey-100); }
+  .greeting { padding: 6px 20px 4px; font-size: 13px; color: var(--grey-600); font-weight: 500; letter-spacing: -0.01em; }
+  .balance-card { margin: 10px 20px 0; background: #fff; border-radius: 16px; padding: 22px 20px 18px; }
+  .account-row { display: flex; align-items: center; gap: 8px; }
+  .account-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--blue-500); display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: -0.05em; line-height: 1; }
+  .account-name { font-size: 15px; font-weight: 700; color: var(--grey-800); letter-spacing: -0.02em; }
+  .account-num { font-size: 13px; color: var(--grey-500); font-weight: 500; margin-left: -2px; }
+  .account-chev { margin-left: auto; color: var(--grey-400); }
+  .balance { margin-top: 12px; font-size: 32px; font-weight: 700; color: var(--grey-900); letter-spacing: -0.03em; font-feature-settings: "tnum" 1; line-height: 1.1; }
+  .balance .won { font-size: 22px; font-weight: 600; margin-left: 1px; letter-spacing: -0.02em; }
+  .balance-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .btn { flex: 1; height: 48px; border: none; border-radius: 12px; font-family: inherit; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; cursor: pointer; transition: background 120ms ease, transform 120ms ease; }
+  .btn-weak { background: var(--grey-100); color: var(--grey-800); }
+  .btn-weak:active { background: var(--grey-200); }
+  .btn-primary { background: var(--blue-500); color: #fff; }
+  .btn-primary:active { background: var(--blue-600); transform: translateY(1px); }
+  .spending-card { margin: 10px 20px 0; background: #fff; border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .spending-card .label { font-size: 13px; color: var(--grey-500); font-weight: 500; letter-spacing: -0.01em; }
+  .spending-card .amount { margin-top: 4px; font-size: 22px; font-weight: 700; color: var(--grey-900); letter-spacing: -0.02em; font-feature-settings: "tnum" 1; line-height: 1.15; }
+  .spending-card .delta { margin-top: 4px; font-size: 12px; color: var(--red-500); font-weight: 600; letter-spacing: -0.01em; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 5px; height: 48px; }
+  .bar-chart .bar { width: 7px; border-radius: 3.5px; background: var(--grey-200); }
+  .bar-chart .bar.now { background: var(--grey-800); }
+  .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); margin: 10px 20px 0; background: #fff; border-radius: 16px; padding: 16px 4px; }
+  .qa { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; }
+  .qa-icon { width: 42px; height: 42px; border-radius: 50%; background: var(--grey-100); color: var(--grey-800); display: grid; place-items: center; }
+  .qa-icon.primary { background: var(--blue-50); color: var(--blue-500); }
+  .qa-label { font-size: 12px; font-weight: 600; color: var(--grey-800); letter-spacing: -0.02em; }
+  .section { margin: 20px 20px 0; background: #fff; border-radius: 16px; overflow: hidden; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 6px; }
+  .section-title { font-size: 17px; font-weight: 700; color: var(--grey-900); letter-spacing: -0.025em; }
+  .section-more { font-size: 13px; color: var(--grey-500); font-weight: 500; display: flex; align-items: center; gap: 2px; }
+  .tx { display: flex; align-items: center; gap: 12px; padding: 12px 20px; }
+  .tx + .tx { border-top: 1px solid var(--grey-50); }
+  .tx:active { background: var(--grey-50); }
+  .tx-icon { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; font-weight: 700; flex-shrink: 0; letter-spacing: -0.04em; line-height: 1; }
+  .tx-icon.starbucks { background: #006241; color: #fff; }
+  .tx-icon.kim       { background: #fde6c2; color: #7a4a14; }
+  .tx-icon.park      { background: #d9e7ff; color: #1b4ea1; }
+  .tx-icon.coupang   { background: #ffe1de; color: #c0392b; }
+  .tx-icon.gs25      { background: #003c7e; color: #fff; font-size: 11px; }
+  .tx-icon.netflix   { background: #0a0a0a; color: #e50914; }
+  .tx-icon.kakao     { background: #ffe600; color: #191919; }
+  .tx-icon.salary    { background: var(--green-50); color: var(--green-500); }
+  .tx-icon.naver     { background: #03c75a; color: #fff; }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-name { font-size: 15px; font-weight: 600; color: var(--grey-900); letter-spacing: -0.025em; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx-meta { font-size: 12px; color: var(--grey-500); font-weight: 500; letter-spacing: -0.01em; }
+  .tx-amount { font-size: 15px; font-weight: 700; color: var(--grey-900); letter-spacing: -0.025em; font-feature-settings: "tnum" 1; text-align: end; white-space: nowrap; }
+  .tx-amount.income { color: var(--green-500); }
+  .bottom-pad { height: 28px; }
+  .tabbar { position: absolute; inset: auto 0 0 0; height: 84px; background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; padding: 6px 8px 28px; border-top: 1px solid var(--grey-200); z-index: 5; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 0; color: var(--grey-400); cursor: pointer; }
+  .tab.active { color: var(--blue-500); }
+  .tab .lbl { font-size: 11px; font-weight: 500; letter-spacing: -0.02em; }
+  .tab.active .lbl { color: var(--grey-900); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="device" role="img" aria-label="iPhone 15 Pro 토스 앱 홈 화면">
+    <div class="screen">
+      <div class="island"></div>
+      <div class="statusbar">
+        <div class="time">9:41</div>
+        <div class="icons">
+          <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor" aria-hidden="true"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="5" y="5" width="3" height="6" rx="0.8"/><rect x="10" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="15" y="0" width="3" height="11" rx="0.8"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor" aria-hidden="true"><path d="M8 11l2.5-2.6a3.5 3.5 0 0 0-5 0L8 11zm5-5.1a8 8 0 0 0-10 0L1 3.9a11 11 0 0 1 14 0l-2 2zm-2.5-2.5a4.95 4.95 0 0 0-5 0l-2-2a8 8 0 0 1 9 0l-2 2z"/></svg>
+          <svg width="27" height="13" viewBox="0 0 27 13" aria-hidden="true"><rect x="0.5" y="0.5" width="23" height="12" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="20" height="9" rx="1.8" fill="currentColor"/><rect x="24.5" y="4" width="1.5" height="5" rx="0.6" fill="currentColor" fill-opacity="0.4"/></svg>
+        </div>
+      </div>
+      <div class="app">
+        <div class="app-bar">
+          <div class="wordmark">toss</div>
+          <div class="app-bar-icons">
+            <div class="icon-btn" aria-label="검색"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5L17 17"/></svg></div>
+            <div class="icon-btn" aria-label="알림"><span class="dot"></span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></div>
+            <div class="icon-btn" aria-label="내 정보"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+          </div>
+        </div>
+        <div class="greeting">안녕하세요, 이지훈님</div>
+        <div class="balance-card">
+          <div class="account-row">
+            <div class="account-dot">t</div>
+            <div class="account-name">토스뱅크 통장</div>
+            <div class="account-num">100-1234-5678</div>
+            <svg class="account-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>
+          </div>
+          <div class="balance">12,847,300<span class="won">원</span></div>
+          <div class="balance-actions">
+            <button class="btn btn-weak">채우기</button>
+            <button class="btn btn-primary">송금하기</button>
+          </div>
+        </div>
+        <div class="spending-card">
+          <div>
+            <div class="label">이번 달 카드 지출</div>
+            <div class="amount">472,830<span style="font-size:15px;font-weight:600;letter-spacing:-0.02em;">원</span></div>
+            <div class="delta">지난달보다 +12.4%</div>
+          </div>
+          <div class="bar-chart" aria-hidden="true">
+            <div class="bar" style="height:32%"></div>
+            <div class="bar" style="height:54%"></div>
+            <div class="bar" style="height:44%"></div>
+            <div class="bar now" style="height:82%"></div>
+          </div>
+        </div>
+        <div class="quick-actions">
+          <div class="qa"><div class="qa-icon primary"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2z"/></svg></div><div class="qa-label">송금</div></div>
+          <div class="qa"><div class="qa-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="3"/><line x1="2.5" y1="10" x2="21.5" y2="10"/></svg></div><div class="qa-label">내 카드</div></div>
+          <div class="qa"><div class="qa-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 11h13"/><circle cx="18" cy="15" r="1.6" fill="currentColor"/></svg></div><div class="qa-label">토스페이</div></div>
+          <div class="qa"><div class="qa-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="qa-label">신용점수</div></div>
+        </div>
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">최근 거래</div>
+            <div class="section-more"><span>전체보기</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg></div>
+          </div>
+          <div class="tx"><div class="tx-icon starbucks" aria-hidden="true">★</div><div class="tx-info"><div class="tx-name">스타벅스 강남R점</div><div class="tx-meta">방금 · 토스뱅크 체크카드</div></div><div class="tx-amount">−6,500원</div></div>
+          <div class="tx"><div class="tx-icon kim" aria-hidden="true">김</div><div class="tx-info"><div class="tx-name">김민서</div><div class="tx-meta">3분 전 · 송금</div></div><div class="tx-amount">−50,000원</div></div>
+          <div class="tx"><div class="tx-icon kakao" aria-hidden="true">K</div><div class="tx-info"><div class="tx-name">카카오T</div><div class="tx-meta">오후 12:42 · 카드결제</div></div><div class="tx-amount">−8,400원</div></div>
+          <div class="tx"><div class="tx-icon salary" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/></svg></div><div class="tx-info"><div class="tx-name">㈜토스페이먼츠</div><div class="tx-meta">오전 9:00 · 급여 입금</div></div><div class="tx-amount income">+3,250,000원</div></div>
+          <div class="tx"><div class="tx-icon coupang" aria-hidden="true">쿠</div><div class="tx-info"><div class="tx-name">쿠팡</div><div class="tx-meta">어제 · 카드결제</div></div><div class="tx-amount">−27,900원</div></div>
+          <div class="tx"><div class="tx-icon park" aria-hidden="true">박</div><div class="tx-info"><div class="tx-name">박지훈</div><div class="tx-meta">어제 · 송금</div></div><div class="tx-amount">−120,000원</div></div>
+          <div class="tx"><div class="tx-icon gs25" aria-hidden="true">GS25</div><div class="tx-info"><div class="tx-name">GS25 역삼점</div><div class="tx-meta">5월 12일 · 카드결제</div></div><div class="tx-amount">−4,200원</div></div>
+          <div class="tx"><div class="tx-icon netflix" aria-hidden="true">N</div><div class="tx-info"><div class="tx-name">넷플릭스</div><div class="tx-meta">5월 12일 · 정기결제</div></div><div class="tx-amount">−17,000원</div></div>
+          <div class="tx"><div class="tx-icon naver" aria-hidden="true">N</div><div class="tx-info"><div class="tx-name">네이버페이 충전</div><div class="tx-meta">5월 11일 · 자동충전</div></div><div class="tx-amount">−50,000원</div></div>
+          <div class="bottom-pad"></div>
+        </div>
+        <div class="bottom-pad"></div>
+      </div>
+      <nav class="tabbar" aria-label="주 탐색">
+        <div class="tab active"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.3 11.2L12 4l8.7 7.2c.4.3.6.8.6 1.2v7.1c0 .8-.7 1.5-1.5 1.5H15c-.6 0-1-.4-1-1v-4.5c0-.6-.4-1-1-1h-2c-.6 0-1 .4-1 1V20c0 .6-.4 1-1 1H4.2c-.8 0-1.5-.7-1.5-1.5v-7.1c0-.5.2-.9.6-1.2z"/></svg><div class="lbl">홈</div></div>
+        <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg><div class="lbl">혜택</div></div>
+        <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg><div class="lbl">주식</div></div>
+        <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2z"/></svg><div class="lbl">송금</div></div>
+        <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div class="lbl">전체</div></div>
+      </nav>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
